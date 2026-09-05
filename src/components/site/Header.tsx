@@ -20,11 +20,11 @@ const NAV = [
 export function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <span className="group flex items-center gap-3">
-      <span className="relative grid h-11 w-11 place-items-center overflow-hidden rounded-full shadow-[var(--shadow-glow)]"
-        style={{ background: "var(--gradient-primary)" }}>
-        <span className="animate-spin-slow absolute inset-0 rounded-full border-2 border-dashed border-primary-foreground/30" />
-        <span className="font-display text-xl font-bold text-primary-foreground">K</span>
-      </span>
+      <img
+        src="/kirat-forex-logo.png"
+        alt="Kirat Forex logo"
+        className="h-11 w-11 rounded-full object-contain shadow-[var(--shadow-glow)]"
+      />
       {!compact && (
         <span className="leading-tight">
           <span className="block font-display text-base font-bold tracking-tight text-navy sm:text-lg">
