@@ -28,4 +28,4 @@ COPY --from=build /app/package.json ./
 
 EXPOSE 3000
 
-CMD ["node", "dist/server/server.js"]
+CMD ["node", ".output/server/index.mjs"]
