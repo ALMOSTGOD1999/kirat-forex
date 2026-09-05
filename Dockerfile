@@ -1,10 +1,4 @@
-# ── Stage 1: Install dependencies ──────────────────────────────────────────────
-FROM node:22-slim AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
-
-# ── Stage 2: Build ────────────────────────────────────────────────────────────
+# ── Stage 1: Build ────────────────────────────────────────────────────────────
 FROM node:22-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -12,7 +6,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# ── Stage 3: Production ───────────────────────────────────────────────────────
+# ── Stage 2: Production ───────────────────────────────────────────────────────
 FROM node:22-slim AS production
 WORKDIR /app
 
@@ -20,10 +14,8 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
 
-# Copy production deps
-COPY --from=deps /app/node_modules ./node_modules
-# Copy built output
-COPY --from=build /app/dist ./dist
+# Nitro bundles everything into .output — no node_modules needed
+COPY --from=build /app/.output ./.output
 COPY --from=build /app/package.json ./
 
 EXPOSE 3000
