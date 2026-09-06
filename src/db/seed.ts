@@ -6,7 +6,8 @@
 import "dotenv/config";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-import { hash } from "bcryptjs";
+import bcryptjs from "bcryptjs";
+const { hash } = bcryptjs;
 import * as schema from "./schema";
 
 const sql = neon(process.env["DATABASE_URL"]!);

@@ -137,8 +137,7 @@ function AuthPage() {
           </form>
 
           <p className="mt-5 rounded-xl bg-accent px-4 py-3 text-xs text-muted-foreground">
-            Admin demo access — {DEFAULT_ADMIN.email} / {DEFAULT_ADMIN.password}. Accounts are
-            stored in the database.
+            Accounts are stored securely in the database.
           </p>
         </div>
       </section>
