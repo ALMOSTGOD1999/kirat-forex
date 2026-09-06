@@ -38,10 +38,9 @@ export const COMPANY = {
   email: "info@kiratforex.com",
   registered: {
     label: "Register Office",
-    address:
-      "Khidirpur colony, Baruipara, Hariharpara, Murshidabad, West Bengal, Pin: 742165",
-    phone: "+91 87591 13532",
-    tel: "+918759113532",
+    address: "Khidirpur colony, Baruipara, Hariharpara, Murshidabad, West Bengal, Pin: 742165",
+    phone: "+91 9735739396",
+    tel: "+919735739396",
   },
   branch: {
     label: "Branch Office",
