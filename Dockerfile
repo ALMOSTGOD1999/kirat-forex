@@ -11,7 +11,7 @@ FROM node:22-slim AS production
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV NITRO_PORT=3000
 ENV HOST=0.0.0.0
 
 # Nitro bundles everything into .output — no node_modules needed
