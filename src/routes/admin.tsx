@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp, Check, ImagePlus, RotateCcw, Save, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, ImagePlus, Plus, RotateCcw, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { PageHero } from "@/components/site/PageHero";
 import {
@@ -25,6 +25,7 @@ import {
   type QuoteRequest,
 } from "@/lib/quotes";
 import { loadDailyRates, saveDailyRates, type DailyRate } from "@/lib/daily-rates";
+import { loadCustomCurrencies, saveCustomCurrency, deleteCustomCurrency, type CustomCurrency } from "@/lib/custom-currencies";
 import { CURRENCIES } from "@/lib/forex-data";
 
 
@@ -475,14 +476,34 @@ function SlidesPanel() {
 
 function RatesPanel() {
   const [rates, setRates] = useState<DailyRate[]>([]);
+  const [customCurrencies, setCustomCurrencies] = useState<CustomCurrency[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newCode, setNewCode] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newSymbol, setNewSymbol] = useState("");
+  const [newFlag, setNewFlag] = useState("🌐");
+
+  const COMMON_FLAGS = [
+    "🌐", "🇺🇸", "🇪🇺", "🇬🇧", "🇯🇵", "🇨🇭", "🇦🇺", "🇨🇦", "🇸🇬", "🇭🇰",
+    "🇦🇪", "🇸🇦", "🇶🇦", "🇰🇼", "🇧🇭", "🇴🇲", "🇮🇳", "🇨🇳", "🇰🇷", "🇹🇭",
+    "🇲🇾", "🇮🇩", "🇵🇭", "🇻🇳", "🇹🇷", "🇷🇺", "🇿🇦", "🇳🇬", "🇪🇬", "🇧🇷",
+    "🇲🇽", "🇦🇷", "🇨🇱", "🇨🇴", "🇵🇪", "🇵🇰", "🇧🇩", "🇱🇰", "🇳🇵", "🇲🇲",
+    "🇰🇪", "🇪🇹", "🇬🇭", "🇹🇿", "🇺🇬", "🇲🇿", "🇦🇴", "🇨🇩", "🇸🇳", "🇨🇲",
+  ];
 
   useEffect(() => {
-    loadDailyRates().then((r) => {
+    Promise.all([loadDailyRates(), loadCustomCurrencies()]).then(([r, cc]) => {
       setRates(r);
+      setCustomCurrencies(cc);
       setLoading(false);
     });
   }, []);
+
+  const allCurrencies = [
+    ...CURRENCIES.map((c) => ({ code: c.code, name: c.name, symbol: c.symbol, flag: c.flag })),
+    ...customCurrencies,
+  ];
 
   const update = (code: string, field: "buy" | "sell", value: string) => {
     const n = parseFloat(value);
@@ -491,6 +512,38 @@ function RatesPanel() {
         r.code === code ? { ...r, [field]: Number.isFinite(n) ? n : 0 } : r,
       ),
     );
+  };
+
+  const addCurrency = async () => {
+    const code = newCode.trim().toUpperCase();
+    if (!code || code.length < 2 || code.length > 5) {
+      toast.error("Currency code must be 2-5 characters");
+      return;
+    }
+    if (allCurrencies.find((c) => c.code === code)) {
+      toast.error("Currency code already exists");
+      return;
+    }
+    const name = newName.trim() || code;
+    const symbol = newSymbol.trim() || code;
+    const curr: CustomCurrency = { code, name, symbol, flag: newFlag };
+    await saveCustomCurrency({ data: curr });
+    setCustomCurrencies((prev) => [...prev, curr]);
+    setRates((prev) => [...prev, { code, buy: 0, sell: 0 }]);
+    setNewCode("");
+    setNewName("");
+    setNewSymbol("");
+    setNewFlag("🌐");
+    setShowAdd(false);
+    toast.success(`${code} added — set its buy/sell rates below`);
+  };
+
+  const removeCurrency = async (code: string) => {
+    if (!confirm(`Remove ${code} from your currency list?`)) return;
+    await deleteCustomCurrency({ data: code });
+    setCustomCurrencies((prev) => prev.filter((c) => c.code !== code));
+    setRates((prev) => prev.filter((r) => r.code !== code));
+    toast.success(`${code} removed`);
   };
 
   const handleSave = async () => {
@@ -509,11 +562,88 @@ function RatesPanel() {
   return (
     <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
       <div className="surface-card p-6">
-        <h2 className="text-lg font-bold text-navy">Set today's exchange rates</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          These rates are shown to customers on the home page, rates page, and in the exchange widget.
-          Update them every morning before opening.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-navy">Set today's exchange rates</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              These rates are shown to customers on the home page, rates page, and in the exchange widget.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAdd(!showAdd)}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-bold text-navy transition-colors hover:bg-accent"
+          >
+            <Plus className="h-4 w-4" /> Add currency
+          </button>
+        </div>
+
+        {showAdd && (
+          <div className="mt-5 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-5">
+            <h3 className="text-sm font-bold text-navy">New currency</h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Code</label>
+                <input
+                  value={newCode}
+                  onChange={(e) => setNewCode(e.target.value.toUpperCase().slice(0, 5))}
+                  placeholder="e.g. KWD"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm font-bold uppercase outline-none focus:ring-2 focus:ring-ring/40"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Name</label>
+                <input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="e.g. Kuwaiti Dinar"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring/40"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Symbol</label>
+                <input
+                  value={newSymbol}
+                  onChange={(e) => setNewSymbol(e.target.value)}
+                  placeholder="e.g. د.ك"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring/40"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-muted-foreground">Flag</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{newFlag}</span>
+                  <select
+                    value={newFlag}
+                    onChange={(e) => setNewFlag(e.target.value)}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring/40"
+                  >
+                    {COMMON_FLAGS.map((f) => (
+                      <option key={f} value={f}>{f}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={addCurrency}
+                className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-primary-foreground"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                <Plus className="h-4 w-4" /> Add
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAdd(false)}
+                className="rounded-xl border border-border px-5 py-2.5 text-sm font-bold text-muted-foreground hover:bg-accent"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="mt-6 overflow-hidden rounded-xl border border-border">
           <div className="max-h-[36rem] overflow-auto">
@@ -523,11 +653,13 @@ function RatesPanel() {
                   <th className="px-4 py-3 font-semibold">Currency</th>
                   <th className="px-4 py-3 text-right font-semibold">Buy (₹)</th>
                   <th className="px-4 py-3 text-right font-semibold">Sell (₹)</th>
+                  <th className="px-4 py-3 text-right font-semibold">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {rates.map((r, i) => {
-                  const meta = CURRENCIES.find((c) => c.code === r.code);
+                {rates.map((r) => {
+                  const meta = allCurrencies.find((c) => c.code === r.code);
+                  const isCustom = !CURRENCIES.find((c) => c.code === r.code);
                   return (
                     <tr
                       key={r.code}
@@ -535,11 +667,18 @@ function RatesPanel() {
                     >
                       <td className="px-4 py-3">
                         <span className="flex items-center gap-3">
-                          <span className="text-lg">{meta?.flag}</span>
+                          <span className="text-lg">{meta?.flag ?? "🌐"}</span>
                           <span>
-                            <span className="block font-bold text-navy">{r.code}</span>
+                            <span className="block font-bold text-navy">
+                              {r.code}
+                              {isCustom && (
+                                <span className="ml-2 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">
+                                  CUSTOM
+                                </span>
+                              )}
+                            </span>
                             <span className="block text-xs uppercase text-muted-foreground">
-                              {meta?.name}
+                              {meta?.name ?? r.code}
                             </span>
                           </span>
                         </span>
@@ -560,6 +699,17 @@ function RatesPanel() {
                           className="w-24 rounded-lg border border-input bg-background px-3 py-2 text-right text-sm font-semibold text-primary outline-none focus:ring-2 focus:ring-ring/40"
                         />
                       </td>
+                      <td className="px-4 py-3 text-right">
+                        {isCustom && (
+                          <button
+                            type="button"
+                            onClick={() => removeCurrency(r.code)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-destructive/40 px-2.5 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-3 w-3" /> Remove
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
@@ -578,7 +728,7 @@ function RatesPanel() {
             <Save className="h-4 w-4" /> Save today's rates
           </button>
           <p className="text-xs text-muted-foreground">
-            Rates are stored per day. Updating today's rates does not affect previous days.
+            Rates are stored per day. Custom currencies appear across the entire website.
           </p>
         </div>
       </div>

@@ -68,6 +68,17 @@ async function main() {
   `;
   console.log("✓ daily_rates table ensured");
 
+  // ── Create custom_currencies table if not exists ─────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS custom_currencies (
+      code TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      symbol TEXT NOT NULL,
+      flag TEXT NOT NULL
+    )
+  `;
+  console.log("✓ custom_currencies table ensured");
+
   // ── Seed today's rates from forex-data defaults ──────────────────────────────
   const date = today();
   for (const c of CURRENCIES) {

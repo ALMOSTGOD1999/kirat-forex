@@ -63,3 +63,11 @@ export const dailyRates = pgTable("daily_rates", {
   buy: real("buy").notNull(),
   sell: real("sell").notNull(),
 });
+
+// ─── Custom Currencies (admin-added) ────────────────────────────────────────
+export const customCurrencies = pgTable("custom_currencies", {
+  code: text("code").primaryKey(), // "KWD", "ZAR", etc.
+  name: text("name").notNull(), // "Kuwaiti Dinar"
+  symbol: text("symbol").notNull(), // "د.ك"
+  flag: text("flag").notNull(), // emoji flag "🇰🇼"
+});

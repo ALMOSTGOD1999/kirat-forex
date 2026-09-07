@@ -2,8 +2,8 @@
  * Daily rates — server functions for admin to set currency rates.
  */
 import { createServerFn } from "@tanstack/react-start";
-import { eq, and } from "drizzle-orm";
-import { dailyRates } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { dailyRates, customCurrencies } from "@/db/schema";
 import { CURRENCIES, RATE_UPDATED } from "@/lib/forex-data";
 
 function today(): string {
@@ -17,23 +17,32 @@ export type DailyRate = {
   sell: number;
 };
 
-/** Load today's rates from the database. Falls back to static CURRENCIES if none set. */
+/** Load today's rates from the database (including custom currencies). Falls back to static CURRENCIES if none set. */
 export const loadDailyRates = createServerFn({ method: "GET" }).handler(async () => {
   const { db } = await import("@/db");
   const date = today();
-  const rows = await db
-    .select()
-    .from(dailyRates)
-    .where(eq(dailyRates.date, date));
+  const [rows, customRows] = await Promise.all([
+    db.select().from(dailyRates).where(eq(dailyRates.date, date)),
+    db.select().from(customCurrencies),
+  ]);
 
-  if (rows.length === 0) {
-    // No rates set today — return defaults from forex-data.ts
-    return CURRENCIES.map((c) => ({ code: c.code, buy: c.buy, sell: c.sell }));
+  // Build the base list from static CURRENCIES
+  const staticRates = CURRENCIES.map((c) => ({ code: c.code, buy: c.buy, sell: c.sell }));
+
+  // Add custom currencies that don't have rates yet
+  for (const cc of customRows) {
+    if (!staticRates.find((r) => r.code === cc.code)) {
+      staticRates.push({ code: cc.code, buy: 0, sell: 0 });
+    }
   }
 
-  // Merge DB rates with static list (preserves order and metadata)
+  if (rows.length === 0) {
+    return staticRates;
+  }
+
+  // Merge DB rates with the full list
   const map = new Map(rows.map((r) => [r.code, { buy: r.buy, sell: r.sell }]));
-  return CURRENCIES.map((c) => {
+  return staticRates.map((c) => {
     const dbRate = map.get(c.code);
     return {
       code: c.code,

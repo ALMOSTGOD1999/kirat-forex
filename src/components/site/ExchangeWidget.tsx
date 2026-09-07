@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { CURRENCIES, RATE_UPDATED } from "@/lib/forex-data";
 import { loadPaymentSettings, newQuoteId, saveQuote } from "@/lib/quotes";
 import { loadDailyRates, getLastUpdated } from "@/lib/daily-rates";
+import { loadCustomCurrencies } from "@/lib/custom-currencies";
 import { RateTicker } from "./RateTicker";
 import { cn } from "@/lib/utils";
 
@@ -19,10 +20,19 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
     CURRENCIES.map((c) => ({ code: c.code, buy: c.buy, sell: c.sell })),
   );
   const [lastUpdated, setLastUpdated] = useState(RATE_UPDATED);
+  const [allCurrencyMeta, setAllCurrencyMeta] = useState(() =>
+    CURRENCIES.map((c) => ({ code: c.code, name: c.name, symbol: c.symbol, flag: c.flag })),
+  );
 
   useEffect(() => {
     loadDailyRates().then(setLiveRates);
     getLastUpdated().then(setLastUpdated);
+    loadCustomCurrencies().then((cc) => {
+      setAllCurrencyMeta([
+        ...CURRENCIES.map((c) => ({ code: c.code, name: c.name, symbol: c.symbol, flag: c.flag })),
+        ...cc,
+      ]);
+    });
   }, []);
 
   const [code, setCode] = useState("USD");
@@ -155,7 +165,7 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
                   aria-label="Select currency"
                   className="border-r border-input bg-secondary px-3 py-3 text-sm font-semibold text-navy outline-none"
                 >
-                  {CURRENCIES.map((c) => (
+                  {allCurrencyMeta.map((c) => (
                     <option key={c.code} value={c.code}>
                       {c.flag} {c.code}
                     </option>
