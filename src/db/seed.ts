@@ -9,9 +9,15 @@ import { drizzle } from "drizzle-orm/neon-http";
 import bcryptjs from "bcryptjs";
 const { hash } = bcryptjs;
 import * as schema from "./schema";
+import { CURRENCIES } from "@/lib/forex-data";
 
 const sql = neon(process.env["DATABASE_URL"]!);
 const db = drizzle(sql, { schema });
+
+function today(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 async function main() {
   console.log("Seeding database...");
@@ -49,6 +55,30 @@ async function main() {
     .onConflictDoNothing();
 
   console.log("✓ Default payment settings seeded");
+
+  // ── Create daily_rates table if not exists ───────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS daily_rates (
+      id TEXT PRIMARY KEY,
+      code TEXT NOT NULL,
+      date TEXT NOT NULL,
+      buy DOUBLE PRECISION NOT NULL,
+      sell DOUBLE PRECISION NOT NULL
+    )
+  `;
+  console.log("✓ daily_rates table ensured");
+
+  // ── Seed today's rates from forex-data defaults ──────────────────────────────
+  const date = today();
+  for (const c of CURRENCIES) {
+    const id = `${c.code}-${date}`;
+    await sql`
+      INSERT INTO daily_rates (id, code, date, buy, sell)
+      VALUES (${id}, ${c.code}, ${date}, ${c.buy}, ${c.sell})
+      ON CONFLICT (id) DO UPDATE SET buy = ${c.buy}, sell = ${c.sell}
+    `;
+  }
+  console.log(`✓ Today's rates seeded (${date})`);
 
   console.log("\nDone!");
 }
