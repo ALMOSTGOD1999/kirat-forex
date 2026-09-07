@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight, BadgeInfo, Banknote, Clock3, CreditCard, RefreshCw, Table2 } from "lucide-react";
 import { toast } from "sonner";
 import { CURRENCIES, RATE_UPDATED } from "@/lib/forex-data";
 import { loadPaymentSettings, newQuoteId, saveQuote } from "@/lib/quotes";
+import { loadDailyRates, getLastUpdated } from "@/lib/daily-rates";
 import { RateTicker } from "./RateTicker";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,16 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>(initialTab);
 
+  const [liveRates, setLiveRates] = useState(() =>
+    CURRENCIES.map((c) => ({ code: c.code, buy: c.buy, sell: c.sell })),
+  );
+  const [lastUpdated, setLastUpdated] = useState(RATE_UPDATED);
+
+  useEffect(() => {
+    loadDailyRates().then(setLiveRates);
+    getLastUpdated().then(setLastUpdated);
+  }, []);
+
   const [code, setCode] = useState("USD");
   const [fx, setFx] = useState("");
   const [inr, setInr] = useState("");
@@ -22,7 +33,10 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
   const [email, setEmail] = useState("");
   const [accepted, setAccepted] = useState(true);
 
-  const currency = useMemo(() => CURRENCIES.find((c) => c.code === code)!, [code]);
+  const currency = useMemo(
+    () => liveRates.find((c) => c.code === code) ?? CURRENCIES.find((c) => c.code === code)!,
+    [code, liveRates],
+  );
   const rate = tab === "sell" ? currency.sell : currency.buy;
 
   const setFxAmount = (v: string) => {
@@ -39,7 +53,7 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
   };
   const onCurrency = (v: string) => {
     setCode(v);
-    const next = CURRENCIES.find((c) => c.code === v)!;
+    const next = liveRates.find((c) => c.code === v) ?? CURRENCIES.find((c) => c.code === v)!;
     const r = tab === "sell" ? next.sell : next.buy;
     if (lastEdited === "fx" && fx) setInr((parseFloat(fx) * r).toFixed(2));
     else if (inr) setFx((parseFloat(inr) / r).toFixed(4));
@@ -125,7 +139,7 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
 
       {tab === "rates" ? (
         <div key="rates" className="animate-fade-in mt-5">
-          <RateTable />
+          <RateTable rates={liveRates} />
         </div>
       ) : (
         <form key={tab} onSubmit={submit} className="animate-fade-in mt-6 space-y-5">
@@ -247,7 +261,7 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
 
       <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl bg-secondary px-4 py-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-2">
-          <Clock3 className="h-3.5 w-3.5 text-primary" /> Last updated: {RATE_UPDATED}
+          <Clock3 className="h-3.5 w-3.5 text-primary" /> Last updated: {lastUpdated}
         </span>
         <span className="flex items-center gap-2">
           <BadgeInfo className="h-3.5 w-3.5 text-destructive" /> 1 FX = Displayed INR • Indicative rates
@@ -257,7 +271,8 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
   );
 }
 
-export function RateTable() {
+export function RateTable({ rates }: { rates?: { code: string; buy: number; sell: number }[] }) {
+  const displayRates = rates ?? CURRENCIES.map((c) => ({ code: c.code, buy: c.buy, sell: c.sell }));
   return (
     <div className="overflow-hidden rounded-xl border border-border">
       <div className="max-h-[26rem] overflow-auto">
@@ -270,25 +285,28 @@ export function RateTable() {
             </tr>
           </thead>
           <tbody>
-            {CURRENCIES.map((c, i) => (
-              <tr
-                key={c.code}
-                style={{ animation: `tick-up 0.4s ease-out ${i * 35}ms both` }}
-                className="border-t border-border transition-colors hover:bg-accent/60"
-              >
-                <td className="px-4 py-3">
-                  <span className="flex items-center gap-3">
-                    <span className="text-lg">{c.flag}</span>
-                    <span>
-                      <span className="block font-bold text-navy">{c.code}</span>
-                      <span className="block text-xs uppercase text-muted-foreground">{c.name}</span>
+            {displayRates.map((r, i) => {
+              const meta = CURRENCIES.find((c) => c.code === r.code);
+              return (
+                <tr
+                  key={r.code}
+                  style={{ animation: `tick-up 0.4s ease-out ${i * 35}ms both` }}
+                  className="border-t border-border transition-colors hover:bg-accent/60"
+                >
+                  <td className="px-4 py-3">
+                    <span className="flex items-center gap-3">
+                      <span className="text-lg">{meta?.flag}</span>
+                      <span>
+                        <span className="block font-bold text-navy">{r.code}</span>
+                        <span className="block text-xs uppercase text-muted-foreground">{meta?.name}</span>
+                      </span>
                     </span>
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right font-semibold text-navy tabular-nums">{c.buy}</td>
-                <td className="px-4 py-3 text-right font-semibold text-primary tabular-nums">{c.sell}</td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-navy tabular-nums">{r.buy}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-primary tabular-nums">{r.sell}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

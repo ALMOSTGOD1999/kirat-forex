@@ -54,3 +54,12 @@ export const paymentSettings = pgTable("payment_settings", {
   qrImage: text("qr_image").notNull().default(""),
   advancePercent: integer("advance_percent").notNull().default(10),
 });
+
+// ─── Daily Rates (one row per currency per day) ─────────────────────────────
+export const dailyRates = pgTable("daily_rates", {
+  id: text("id").primaryKey(), // e.g. "USD-2026-09-07"
+  code: text("code").notNull(), // "USD", "EUR", etc.
+  date: text("date").notNull(), // "2026-09-07"
+  buy: real("buy").notNull(),
+  sell: real("sell").notNull(),
+});

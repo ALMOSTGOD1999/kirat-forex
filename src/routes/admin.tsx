@@ -24,6 +24,8 @@ import {
   type PaymentSettings,
   type QuoteRequest,
 } from "@/lib/quotes";
+import { loadDailyRates, saveDailyRates, type DailyRate } from "@/lib/daily-rates";
+import { CURRENCIES } from "@/lib/forex-data";
 
 
 export const Route = createFileRoute("/admin")({
@@ -47,7 +49,7 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminPage() {
-  const [panel, setPanel] = useState<"slides" | "requests">("slides");
+  const [panel, setPanel] = useState<"slides" | "requests" | "rates">("slides");
   const { user, isAdmin } = useAuth();
 
   if (!isAdmin) {
@@ -89,6 +91,7 @@ function AdminPage() {
           {(
             [
               ["slides", "Hero slideshow"],
+              ["rates", "Daily rates"],
               ["requests", "Quote requests"],
             ] as const
           ).map(([id, label]) => (
@@ -108,7 +111,7 @@ function AdminPage() {
           ))}
         </div>
       </section>
-      {panel === "slides" ? <SlidesPanel /> : <RequestsPanel />}
+      {panel === "slides" ? <SlidesPanel /> : panel === "rates" ? <RatesPanel /> : <RequestsPanel />}
     </div>
   );
 }
@@ -467,5 +470,118 @@ function SlidesPanel() {
         </p>
       </section>
     </div>
+  );
+}
+
+function RatesPanel() {
+  const [rates, setRates] = useState<DailyRate[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDailyRates().then((r) => {
+      setRates(r);
+      setLoading(false);
+    });
+  }, []);
+
+  const update = (code: string, field: "buy" | "sell", value: string) => {
+    const n = parseFloat(value);
+    setRates((prev) =>
+      prev.map((r) =>
+        r.code === code ? { ...r, [field]: Number.isFinite(n) ? n : 0 } : r,
+      ),
+    );
+  };
+
+  const handleSave = async () => {
+    await saveDailyRates({ data: rates });
+    toast.success("Daily rates saved — changes are live on the website");
+  };
+
+  if (loading) {
+    return (
+      <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
+        <p className="text-sm text-muted-foreground">Loading rates…</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="surface-card p-6">
+        <h2 className="text-lg font-bold text-navy">Set today's exchange rates</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          These rates are shown to customers on the home page, rates page, and in the exchange widget.
+          Update them every morning before opening.
+        </p>
+
+        <div className="mt-6 overflow-hidden rounded-xl border border-border">
+          <div className="max-h-[36rem] overflow-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="sticky top-0 z-10 text-primary-foreground">
+                <tr style={{ background: "var(--gradient-primary)" }}>
+                  <th className="px-4 py-3 font-semibold">Currency</th>
+                  <th className="px-4 py-3 text-right font-semibold">Buy (₹)</th>
+                  <th className="px-4 py-3 text-right font-semibold">Sell (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rates.map((r, i) => {
+                  const meta = CURRENCIES.find((c) => c.code === r.code);
+                  return (
+                    <tr
+                      key={r.code}
+                      className="border-t border-border transition-colors hover:bg-accent/60"
+                    >
+                      <td className="px-4 py-3">
+                        <span className="flex items-center gap-3">
+                          <span className="text-lg">{meta?.flag}</span>
+                          <span>
+                            <span className="block font-bold text-navy">{r.code}</span>
+                            <span className="block text-xs uppercase text-muted-foreground">
+                              {meta?.name}
+                            </span>
+                          </span>
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <input
+                          inputMode="decimal"
+                          value={r.buy}
+                          onChange={(e) => update(r.code, "buy", e.target.value)}
+                          className="w-24 rounded-lg border border-input bg-background px-3 py-2 text-right text-sm font-semibold text-navy outline-none focus:ring-2 focus:ring-ring/40"
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <input
+                          inputMode="decimal"
+                          value={r.sell}
+                          onChange={(e) => update(r.code, "sell", e.target.value)}
+                          className="w-24 rounded-lg border border-input bg-background px-3 py-2 text-right text-sm font-semibold text-primary outline-none focus:ring-2 focus:ring-ring/40"
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            onClick={handleSave}
+            className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-primary-foreground"
+            style={{ background: "var(--gradient-primary)" }}
+          >
+            <Save className="h-4 w-4" /> Save today's rates
+          </button>
+          <p className="text-xs text-muted-foreground">
+            Rates are stored per day. Updating today's rates does not affect previous days.
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
