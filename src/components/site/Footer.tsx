@@ -5,7 +5,10 @@ import { Logo } from "./Header";
 
 export function Footer() {
   return (
-    <footer className="relative overflow-hidden text-primary-foreground" style={{ background: "var(--gradient-navy)" }}>
+    <footer
+      className="relative overflow-hidden text-primary-foreground"
+      style={{ background: "var(--gradient-navy)" }}
+    >
       <div className="pointer-events-none absolute inset-0 opacity-[0.07]">
         <div className="animate-marquee-slow flex w-max gap-10 py-10 font-display text-6xl">
           {[...CURRENCIES, ...CURRENCIES].map((c, i) => (
@@ -20,14 +23,16 @@ export function Footer() {
             <Logo />
           </div>
           <p className="mt-5 text-sm leading-relaxed text-primary-foreground/75">
-            RBI approved authorized forex dealer (Category&nbsp;II&nbsp;-&nbsp;FFMC) serving Murshidabad
-            and West Bengal since 2017.
+            RBI approved authorized forex dealer (Category&nbsp;&nbsp;-&nbsp;FFMC) serving
+            Murshidabad and West Bengal since 2017.
           </p>
           <p className="mt-3 text-xs text-primary-foreground/55">CIN: {COMPANY.cin}</p>
         </div>
 
         <div>
-          <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">Quick Links</h4>
+          <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">
+            Quick Links
+          </h4>
           <ul className="mt-5 space-y-3 text-sm">
             {[
               { to: "/", label: "Home" },
@@ -37,7 +42,6 @@ export function Footer() {
               { to: "/about", label: "About Us" },
               { to: "/contact", label: "Contact Us" },
             ].map((l) => (
-
               <li key={l.to}>
                 <Link
                   to={l.to}
@@ -86,10 +90,16 @@ export function Footer() {
 
       <div className="relative border-t border-primary-foreground/10 px-4 py-6 text-center text-xs text-primary-foreground/60">
         <p>
-          © {new Date().getFullYear()} {COMPANY.name} · All rights reserved. Rates are indicative and
-          subject to change.
+          © {new Date().getFullYear()} {COMPANY.name} · All rights reserved. Rates are indicative
+          and subject to change.
         </p>
-        <p className="mt-2 inline-block overflow-hidden whitespace-nowrap border-r-2 border-primary-foreground/60" style={{ animation: "typewriter 2.5s steps(20) 1s 1 normal both, blink-caret 0.75s step-end infinite" }}>
+        <p
+          className="mt-2 inline-block overflow-hidden whitespace-nowrap border-r-2 border-primary-foreground/60"
+          style={{
+            animation:
+              "typewriter 2.5s steps(20) 1s 1 normal both, blink-caret 0.75s step-end infinite",
+          }}
+        >
           crafted by{" "}
           <a
             href="https://www.incodent.com/"

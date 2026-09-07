@@ -25,9 +25,21 @@ export const Route = createFileRoute("/about")({
 });
 
 const VALUES = [
-  { icon: ShieldCheck, title: "Compliance first", body: "Every transaction follows RBI FEMA guidelines and proper documentation." },
-  { icon: HeartHandshake, title: "Personal service", body: "Local team that speaks your language and guides first time travellers." },
-  { icon: Award, title: "Honest pricing", body: "Transparent rates with no hidden charges — what you see is what you pay." },
+  {
+    icon: ShieldCheck,
+    title: "Compliance first",
+    body: "Every transaction follows RBI FEMA guidelines and proper documentation.",
+  },
+  {
+    icon: HeartHandshake,
+    title: "Personal service",
+    body: "Local team that speaks your language and guides first time travellers.",
+  },
+  {
+    icon: Award,
+    title: "Honest pricing",
+    body: "Transparent rates with no hidden charges — what you see is what you pay.",
+  },
 ];
 
 function AboutPage() {
@@ -64,7 +76,7 @@ function AboutPage() {
           </p>
           <ul className="mt-6 space-y-2">
             {[
-              "RBI authorised dealer (Category II - FFMC)",
+              "RBI authorised dealer (Category - FFMC)",
               "20+ currencies available in stock",
               "Doorstep delivery across Murshidabad",
               "Support for students, pilgrims and businesses",

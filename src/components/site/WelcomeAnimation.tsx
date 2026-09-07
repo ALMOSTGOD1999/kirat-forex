@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import airplane from "@/assets/airplane.png";
 
 const SYMBOLS = [
   "$", "€", "£", "¥", "₹", "₩", "₽", "฿", "₺", "₫", "﷼", "₴", "₦", "₱", "R$", "kr", "Fr", "₪", "د.إ", "₲",
@@ -136,27 +135,6 @@ export function WelcomeAnimation() {
         >
           Private Limited · Murshidabad
         </p>
-      </div>
-
-      {/* airplane flies across the screen */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center overflow-hidden"
-      >
-        <div
-          style={{
-            animation: "fly-across 4.6s cubic-bezier(0.4, 0, 0.3, 1) both",
-            animationDelay: "0.3s",
-          }}
-        >
-          <img
-            src={airplane}
-            alt=""
-            width={1024}
-            height={1024}
-            className="h-40 w-40 -scale-x-100 object-contain drop-shadow-[0_18px_40px_rgba(0,0,0,0.5)] sm:h-64 sm:w-64"
-          />
-        </div>
       </div>
     </div>
   );
