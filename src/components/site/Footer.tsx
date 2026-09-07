@@ -85,8 +85,21 @@ export function Footer() {
       </div>
 
       <div className="relative border-t border-primary-foreground/10 px-4 py-6 text-center text-xs text-primary-foreground/60">
-        © {new Date().getFullYear()} {COMPANY.name} · All rights reserved. Rates are indicative and
-        subject to change.
+        <p>
+          © {new Date().getFullYear()} {COMPANY.name} · All rights reserved. Rates are indicative and
+          subject to change.
+        </p>
+        <p className="mt-2 inline-block overflow-hidden whitespace-nowrap border-r-2 border-primary-foreground/60" style={{ animation: "typewriter 2.5s steps(20) 1s 1 normal both, blink-caret 0.75s step-end infinite" }}>
+          crafted by{" "}
+          <a
+            href="https://www.incodent.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-primary-foreground/80 transition-colors hover:text-gold"
+          >
+            Incodent
+          </a>
+        </p>
       </div>
     </footer>
   );

@@ -210,6 +210,14 @@
     transform: translateY(0);
   }
 }
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: var(--color-primary-foreground); }
+}
 
 @utility text-gradient {
   background: var(--gradient-primary);
