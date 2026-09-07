@@ -80,7 +80,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Kirat Forex Pvt Ltd — Currency Exchange, Murshidabad" },
+      { title: "Kirat Forex Pvt Ltd — Currency Exchange, Murshidabad | Built by Incodent" },
       {
         name: "description",
         content:

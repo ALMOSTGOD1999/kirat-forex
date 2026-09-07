@@ -123,6 +123,18 @@ function AboutPage() {
           ))}
         </div>
       </section>
+
+      <section className="border-t border-border py-10 text-center text-xs text-muted-foreground">
+        Website crafted by{" "}
+        <a
+          href="https://www.incodent.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-primary transition-colors hover:text-gold"
+        >
+          Incodent
+        </a>
+      </section>
     </div>
   );
 }
