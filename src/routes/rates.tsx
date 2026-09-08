@@ -10,7 +10,7 @@ import { loadDailyRates, getLastUpdated } from "@/lib/daily-rates";
 export const Route = createFileRoute("/rates")({
   head: () => ({
     meta: [
-      { title: "Live Forex Rates in Murshidabad | Kirat Forex" },
+      { title: "Live Forex Rates | Kirat Forex" },
       {
         name: "description",
         content:

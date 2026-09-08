@@ -479,6 +479,7 @@ function RatesPanel() {
   const [customCurrencies, setCustomCurrencies] = useState<CustomCurrency[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [rateDisplay, setRateDisplay] = useState<Record<string, string>>({});
   const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
   const [newSymbol, setNewSymbol] = useState("");
@@ -506,12 +507,15 @@ function RatesPanel() {
   ];
 
   const update = (code: string, field: "buy" | "sell", value: string) => {
-    const n = parseFloat(value);
+    // Allow empty, digits, and one decimal point — store as string so decimals work while typing
+    if (value !== "" && !/^\d*\.?\d*$/.test(value)) return;
     setRates((prev) =>
       prev.map((r) =>
-        r.code === code ? { ...r, [field]: Number.isFinite(n) ? n : 0 } : r,
+        r.code === code ? { ...r, [field]: value === "" ? 0 : parseFloat(value) || 0 } : r,
       ),
     );
+    // Keep the raw string in the input by using a separate display state
+    setRateDisplay((prev) => ({ ...prev, [`${code}-${field}`]: value }));
   };
 
   const addCurrency = async () => {
@@ -686,7 +690,7 @@ function RatesPanel() {
                       <td className="px-4 py-3 text-right">
                         <input
                           inputMode="decimal"
-                          value={r.buy}
+                          value={rateDisplay[`${r.code}-buy`] ?? String(r.buy)}
                           onChange={(e) => update(r.code, "buy", e.target.value)}
                           className="w-24 rounded-lg border border-input bg-background px-3 py-2 text-right text-sm font-semibold text-navy outline-none focus:ring-2 focus:ring-ring/40"
                         />
@@ -694,7 +698,7 @@ function RatesPanel() {
                       <td className="px-4 py-3 text-right">
                         <input
                           inputMode="decimal"
-                          value={r.sell}
+                          value={rateDisplay[`${r.code}-sell`] ?? String(r.sell)}
                           onChange={(e) => update(r.code, "sell", e.target.value)}
                           className="w-24 rounded-lg border border-input bg-background px-3 py-2 text-right text-sm font-semibold text-primary outline-none focus:ring-2 focus:ring-ring/40"
                         />

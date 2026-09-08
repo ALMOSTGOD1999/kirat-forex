@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight, BadgeInfo, Banknote, Clock3, CreditCard, RefreshCw, Table2 } from "lucide-react";
+import {
+  ArrowRight,
+  BadgeInfo,
+  Banknote,
+  Clock3,
+  CreditCard,
+  RefreshCw,
+  Table2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { CURRENCIES, RATE_UPDATED } from "@/lib/forex-data";
 import { loadPaymentSettings, newQuoteId, saveQuote } from "@/lib/quotes";
@@ -8,7 +16,6 @@ import { loadDailyRates, getLastUpdated } from "@/lib/daily-rates";
 import { loadCustomCurrencies } from "@/lib/custom-currencies";
 import { RateTicker } from "./RateTicker";
 import { cn } from "@/lib/utils";
-
 
 type Tab = "buy" | "sell" | "rates";
 
@@ -111,10 +118,9 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
     void navigate({ to: "/quote/$id", params: { id } });
   };
 
-
   const tabs: { id: Tab; label: string; icon: typeof Banknote }[] = [
-    { id: "buy", label: "Buy Forex", icon: CreditCard },
-    { id: "sell", label: "Sale Forex", icon: Banknote },
+    { id: "buy", label: "We Buy Forex", icon: CreditCard },
+    { id: "sell", label: "We Sale Forex", icon: Banknote },
     { id: "rates", label: "Rates", icon: Table2 },
   ];
 
@@ -254,7 +260,8 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
                 onChange={(e) => setAccepted(e.target.checked)}
                 className="h-4 w-4 accent-[oklch(0.52_0.19_258)]"
               />
-              I accept the <span className="font-semibold text-primary underline">Privacy Policy</span>.
+              I accept the{" "}
+              <span className="font-semibold text-primary underline">Privacy Policy</span>.
             </label>
 
             <button
@@ -274,7 +281,8 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
           <Clock3 className="h-3.5 w-3.5 text-primary" /> Last updated: {lastUpdated}
         </span>
         <span className="flex items-center gap-2">
-          <BadgeInfo className="h-3.5 w-3.5 text-destructive" /> 1 FX = Displayed INR • Indicative rates
+          <BadgeInfo className="h-3.5 w-3.5 text-destructive" /> 1 FX = Displayed INR • Indicative
+          rates
         </span>
       </div>
     </div>
@@ -287,7 +295,7 @@ export function RateTable({ rates }: { rates?: { code: string; buy: number; sell
     <div className="overflow-hidden rounded-xl border border-border">
       <div className="max-h-[26rem] overflow-auto">
         <table className="w-full text-left text-sm">
-          <thead className="sticky top-0 z-10 text-primary-foreground" >
+          <thead className="sticky top-0 z-10 text-primary-foreground">
             <tr style={{ background: "var(--gradient-primary)" }}>
               <th className="px-4 py-3 font-semibold">Currency</th>
               <th className="px-4 py-3 text-right font-semibold">Buy</th>
@@ -308,12 +316,18 @@ export function RateTable({ rates }: { rates?: { code: string; buy: number; sell
                       <span className="text-lg">{meta?.flag}</span>
                       <span>
                         <span className="block font-bold text-navy">{r.code}</span>
-                        <span className="block text-xs uppercase text-muted-foreground">{meta?.name}</span>
+                        <span className="block text-xs uppercase text-muted-foreground">
+                          {meta?.name}
+                        </span>
                       </span>
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right font-semibold text-navy tabular-nums">{r.buy}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-primary tabular-nums">{r.sell}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-navy tabular-nums">
+                    {r.buy}
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-primary tabular-nums">
+                    {r.sell}
+                  </td>
                 </tr>
               );
             })}
