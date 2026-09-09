@@ -68,16 +68,17 @@ export function Footer() {
         <div>
           <h4 className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">Reach Us</h4>
           <ul className="mt-5 space-y-4 text-sm text-primary-foreground/75">
-            <li className="flex gap-3">
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-              <span>{COMPANY.registered.address}</span>
-            </li>
-            <li className="flex gap-3">
-              <Phone className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-              <a href={`tel:${COMPANY.registered.tel}`} className="hover:text-gold">
-                {COMPANY.registered.phone}
-              </a>
-            </li>
+            {[COMPANY.registered, COMPANY.branch].map((o) => (
+              <li key={o.label} className="space-y-2">
+                <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gold">
+                  <MapPin className="h-3.5 w-3.5" /> {o.label}
+                </span>
+                <p className="pl-5.5 text-primary-foreground/65">{o.address}</p>
+                <a href={`tel:${o.tel}`} className="flex items-center gap-2 pl-5.5 hover:text-gold">
+                  <Phone className="h-3.5 w-3.5 shrink-0 text-gold" /> {o.phone}
+                </a>
+              </li>
+            ))}
             <li className="flex gap-3">
               <Mail className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
               <a href={`mailto:${COMPANY.email}`} className="hover:text-gold">

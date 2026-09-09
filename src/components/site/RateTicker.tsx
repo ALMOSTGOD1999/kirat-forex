@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { CURRENCIES } from "@/lib/forex-data";
+import { loadDailyRates } from "@/lib/daily-rates";
 import { cn } from "@/lib/utils";
 
 export function RateTicker({
@@ -8,7 +10,20 @@ export function RateTicker({
   mode?: "buy" | "sell";
   className?: string;
 }) {
-  const items = [...CURRENCIES, ...CURRENCIES];
+  const [rates, setRates] = useState(() =>
+    CURRENCIES.map((c) => ({ code: c.code, buy: c.buy, sell: c.sell, flag: c.flag })),
+  );
+
+  useEffect(() => {
+    loadDailyRates().then((r) =>
+      setRates(r.map((rr) => {
+        const meta = CURRENCIES.find((c) => c.code === rr.code);
+        return { ...rr, flag: meta?.flag ?? "🌐" };
+      })),
+    );
+  }, []);
+
+  const items = [...rates, ...rates];
   return (
     <div
       className={cn("relative overflow-hidden rounded-xl", className)}
