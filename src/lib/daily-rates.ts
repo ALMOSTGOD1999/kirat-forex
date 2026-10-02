@@ -3,7 +3,7 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
-import { dailyRates, customCurrencies } from "@/db/schema";
+import { dailyRates, customCurrencies, hiddenCurrencies } from "@/db/schema";
 import { CURRENCIES, RATE_UPDATED } from "@/lib/forex-data";
 
 function today(): string {
@@ -17,14 +17,16 @@ export type DailyRate = {
   sell: number;
 };
 
-/** Load today's rates from the database (including custom currencies). Falls back to static CURRENCIES if none set. */
+/** Load today's rates from the database (including custom currencies, excluding removed ones). Falls back to static CURRENCIES if none set. */
 export const loadDailyRates = createServerFn({ method: "GET" }).handler(async () => {
   const { db } = await import("@/db");
   const date = today();
-  const [rows, customRows] = await Promise.all([
+  const [rows, customRows, hiddenRows] = await Promise.all([
     db.select().from(dailyRates).where(eq(dailyRates.date, date)),
     db.select().from(customCurrencies),
+    db.select().from(hiddenCurrencies),
   ]);
+  const hidden = new Set(hiddenRows.map((h) => h.code));
 
   // Build the base list from static CURRENCIES
   const staticRates = CURRENCIES.map((c) => ({ code: c.code, buy: c.buy, sell: c.sell }));
@@ -36,13 +38,16 @@ export const loadDailyRates = createServerFn({ method: "GET" }).handler(async ()
     }
   }
 
+  // Drop currencies the admin removed from the site
+  const visible = staticRates.filter((c) => !hidden.has(c.code));
+
   if (rows.length === 0) {
-    return staticRates;
+    return visible;
   }
 
   // Merge DB rates with the full list
   const map = new Map(rows.map((r) => [r.code, { buy: r.buy, sell: r.sell }]));
-  return staticRates.map((c) => {
+  return visible.map((c) => {
     const dbRate = map.get(c.code);
     return {
       code: c.code,

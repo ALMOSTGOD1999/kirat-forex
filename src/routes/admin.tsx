@@ -32,8 +32,15 @@ import {
   setTestimonialStatus,
   type Testimonial,
 } from "@/lib/testimonials";
+import {
+  deleteCurrencyIcon,
+  hideCurrency,
+  loadCurrencyIcons,
+  loadHiddenCurrencies,
+  saveCurrencyIcon,
+  unhideCurrency,
+} from "@/lib/currency-assets";
 import { CURRENCIES } from "@/lib/forex-data";
-
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -594,9 +601,46 @@ function SlidesPanel() {
   );
 }
 
+/** Resize an uploaded icon to at most 128px on its longest edge and re-encode it (WebP, lossy). */
+async function compressIcon(
+  file: File,
+): Promise<{ dataUrl: string; before: number; after: number }> {
+  if (!file.type.startsWith("image/")) throw new Error("Please choose an image file");
+  if (file.size > 2_000_000) throw new Error("Image too large — use one under 2 MB");
+  const src = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Could not read the file"));
+    reader.readAsDataURL(file);
+  });
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.onerror = () => reject(new Error("Could not decode the image"));
+    el.src = src;
+  });
+  const scale = Math.min(1, 128 / Math.max(img.width, img.height));
+  const w = Math.max(1, Math.round(img.width * scale));
+  const h = Math.max(1, Math.round(img.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas is not supported in this browser");
+  ctx.drawImage(img, 0, 0, w, h);
+  let dataUrl = canvas.toDataURL("image/webp", 0.72);
+  if (!dataUrl.startsWith("data:image/webp")) {
+    dataUrl = canvas.toDataURL("image/jpeg", 0.72);
+  }
+  const after = Math.round(((dataUrl.length - 22) * 3) / 4);
+  return { dataUrl, before: file.size, after };
+}
+
 function RatesPanel() {
   const [rates, setRates] = useState<DailyRate[]>([]);
   const [customCurrencies, setCustomCurrencies] = useState<CustomCurrency[]>([]);
+  const [hidden, setHidden] = useState<string[]>([]);
+  const [icons, setIcons] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [rateDisplay, setRateDisplay] = useState<Record<string, string>>({});
@@ -614,9 +658,16 @@ function RatesPanel() {
   ];
 
   useEffect(() => {
-    Promise.all([loadDailyRates(), loadCustomCurrencies()]).then(([r, cc]) => {
+    Promise.all([
+      loadDailyRates(),
+      loadCustomCurrencies(),
+      loadHiddenCurrencies(),
+      loadCurrencyIcons(),
+    ]).then(([r, cc, h, ic]) => {
       setRates(r);
       setCustomCurrencies(cc);
+      setHidden(h);
+      setIcons(Object.fromEntries(ic.map((i) => [i.code, i.img])));
       setLoading(false);
     });
   }, []);
@@ -662,12 +713,62 @@ function RatesPanel() {
     toast.success(`${code} added — set its buy/sell rates below`);
   };
 
-  const removeCurrency = async (code: string) => {
-    if (!confirm(`Remove ${code} from your currency list?`)) return;
-    await deleteCustomCurrency({ data: code });
-    setCustomCurrencies((prev) => prev.filter((c) => c.code !== code));
-    setRates((prev) => prev.filter((r) => r.code !== code));
-    toast.success(`${code} removed`);
+  const removeCurrency = async (code: string, isCustom: boolean) => {
+    if (isCustom) {
+      if (!confirm(`Delete ${code} permanently?`)) return;
+      await deleteCustomCurrency({ data: code });
+      await deleteCurrencyIcon({ data: code });
+      setCustomCurrencies((prev) => prev.filter((c) => c.code !== code));
+      setIcons((prev) => {
+        const next = { ...prev };
+        delete next[code];
+        return next;
+      });
+      setRates((prev) => prev.filter((r) => r.code !== code));
+      toast.success(`${code} deleted`);
+    } else {
+      if (!confirm(`Remove ${code} from the website? You can restore it from the list below.`))
+        return;
+      await hideCurrency({ data: code });
+      setHidden((prev) => [...prev, code]);
+      setRates((prev) => prev.filter((r) => r.code !== code));
+      toast.success(`${code} removed — restore it anytime below the table`);
+    }
+  };
+
+  const restoreCurrency = async (code: string) => {
+    await unhideCurrency({ data: code });
+    setHidden((prev) => prev.filter((c) => c !== code));
+    setRates(await loadDailyRates());
+    toast.success(`${code} restored`);
+  };
+
+  const onIconFile = async (code: string, files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+    try {
+      const { dataUrl, before, after } = await compressIcon(file);
+      await saveCurrencyIcon({ data: { code, img: dataUrl } });
+      setIcons((prev) => ({ ...prev, [code]: dataUrl }));
+      toast.success(
+        `Icon updated — compressed ${Math.max(1, Math.round(before / 1024))} KB → ${Math.max(
+          1,
+          Math.round(after / 1024),
+        )} KB`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not upload the icon");
+    }
+  };
+
+  const clearIcon = async (code: string) => {
+    await deleteCurrencyIcon({ data: code });
+    setIcons((prev) => {
+      const next = { ...prev };
+      delete next[code];
+      return next;
+    });
+    toast.success("Icon removed");
   };
 
   const handleSave = async () => {
@@ -791,7 +892,41 @@ function RatesPanel() {
                     >
                       <td className="px-4 py-3">
                         <span className="flex items-center gap-3">
-                          <span className="text-lg">{meta?.flag ?? "🌐"}</span>
+                          <span className="relative shrink-0">
+                            <label
+                              title="Click to upload icon (auto-compressed to 128px)"
+                              className="grid h-9 w-9 cursor-pointer place-items-center overflow-hidden rounded-lg border border-border bg-secondary transition-colors hover:border-primary/50"
+                            >
+                              {icons[r.code] ? (
+                                <img
+                                  src={icons[r.code]}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-base">{meta?.flag ?? "🌐"}</span>
+                              )}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                hidden
+                                onChange={(e) => {
+                                  onIconFile(r.code, e.target.files);
+                                  e.target.value = "";
+                                }}
+                              />
+                            </label>
+                            {icons[r.code] && (
+                              <button
+                                type="button"
+                                title="Remove icon"
+                                onClick={() => clearIcon(r.code)}
+                                className="absolute -right-1.5 -top-1.5 grid h-4 w-4 place-items-center rounded-full border border-border bg-background text-[10px] font-bold leading-none text-destructive hover:bg-destructive/10"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </span>
                           <span>
                             <span className="block font-bold text-navy">
                               {r.code}
@@ -824,15 +959,13 @@ function RatesPanel() {
                         />
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {isCustom && (
-                          <button
-                            type="button"
-                            onClick={() => removeCurrency(r.code)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-destructive/40 px-2.5 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-3 w-3" /> Remove
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeCurrency(r.code, isCustom)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-destructive/40 px-2.5 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-3 w-3" /> Remove
+                        </button>
                       </td>
                     </tr>
                   );
@@ -841,6 +974,26 @@ function RatesPanel() {
             </table>
           </div>
         </div>
+
+        {hidden.length > 0 && (
+          <div className="mt-4 rounded-xl bg-secondary px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Removed currencies
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {hidden.map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => restoreCurrency(code)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-navy transition-colors hover:border-primary/50 hover:text-primary"
+                >
+                  <RotateCcw className="h-3 w-3" /> {code}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-5 flex flex-wrap items-center gap-4">
           <button

@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { CURRENCIES, RATE_UPDATED } from "@/lib/forex-data";
 import { loadPaymentSettings, newQuoteId, saveQuote } from "@/lib/quotes";
 import { sendQuoteEmails } from "@/lib/email";
+import { loadCurrencyIcons, loadHiddenCurrencies } from "@/lib/currency-assets";
 import { loadDailyRates, getLastUpdated } from "@/lib/daily-rates";
 import { loadCustomCurrencies } from "@/lib/custom-currencies";
 import { RateTicker } from "./RateTicker";
@@ -31,16 +32,33 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
   const [allCurrencyMeta, setAllCurrencyMeta] = useState(() =>
     CURRENCIES.map((c) => ({ code: c.code, name: c.name, symbol: c.symbol, flag: c.flag })),
   );
+  const [icons, setIcons] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    loadDailyRates().then(setLiveRates);
-    getLastUpdated().then(setLastUpdated);
-    loadCustomCurrencies().then((cc) => {
-      setAllCurrencyMeta([
-        ...CURRENCIES.map((c) => ({ code: c.code, name: c.name, symbol: c.symbol, flag: c.flag })),
-        ...cc,
+    (async () => {
+      const [rates, updated, cc, hidden, iconRows] = await Promise.all([
+        loadDailyRates(),
+        getLastUpdated(),
+        loadCustomCurrencies(),
+        loadHiddenCurrencies(),
+        loadCurrencyIcons(),
       ]);
-    });
+      setLiveRates(rates);
+      setLastUpdated(updated);
+      const hiddenSet = new Set(hidden);
+      setAllCurrencyMeta(
+        [
+          ...CURRENCIES.map((c) => ({
+            code: c.code,
+            name: c.name,
+            symbol: c.symbol,
+            flag: c.flag,
+          })),
+          ...cc,
+        ].filter((c) => !hiddenSet.has(c.code)),
+      );
+      setIcons(Object.fromEntries(iconRows.map((i) => [i.code, i.img])));
+    })();
   }, []);
 
   const [code, setCode] = useState("USD");
@@ -295,6 +313,16 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
 }
 
 export function RateTable({ rates }: { rates?: { code: string; buy: number; sell: number }[] }) {
+  const [icons, setIcons] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    loadCurrencyIcons()
+      .then((rows) => setIcons(Object.fromEntries(rows.map((i) => [i.code, i.img]))))
+      .catch(() => {
+        /* icons are optional decoration */
+      });
+  }, []);
+
   const displayRates = rates ?? CURRENCIES.map((c) => ({ code: c.code, buy: c.buy, sell: c.sell }));
   return (
     <div className="overflow-hidden rounded-xl border border-border">
@@ -318,11 +346,20 @@ export function RateTable({ rates }: { rates?: { code: string; buy: number; sell
                 >
                   <td className="px-4 py-3">
                     <span className="flex items-center gap-3">
-                      <span className="text-lg">{meta?.flag}</span>
+                      {icons[r.code] ? (
+                        <img
+                          src={icons[r.code]}
+                          alt=""
+                          loading="lazy"
+                          className="h-7 w-7 shrink-0 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <span className="text-lg">{meta?.flag ?? "🌐"}</span>
+                      )}
                       <span>
                         <span className="block font-bold text-navy">{r.code}</span>
                         <span className="block text-xs uppercase text-muted-foreground">
-                          {meta?.name}
+                          {meta?.name ?? r.code}
                         </span>
                       </span>
                     </span>

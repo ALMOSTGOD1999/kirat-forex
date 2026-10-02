@@ -79,3 +79,14 @@ export const testimonials = pgTable("testimonials", {
   content: text("content").notNull(),
   status: text("status").notNull().default("pending"), // "pending" | "approved"
 });
+
+// ─── Hidden currencies (removed from site by admin, restorable) ─────────────
+export const hiddenCurrencies = pgTable("hidden_currencies", {
+  code: text("code").primaryKey(),
+});
+
+// ─── Currency icons (uploaded images, compressed data URLs) ─────────────────
+export const currencyIcons = pgTable("currency_icons", {
+  code: text("code").primaryKey(),
+  img: text("img").notNull(), // webp/jpeg data URL, ≤ ~128px
+});
