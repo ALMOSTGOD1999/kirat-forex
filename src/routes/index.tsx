@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   ArrowRight,
   Banknote,
@@ -34,6 +35,13 @@ import {
   STATS,
   TESTIMONIALS,
 } from "@/lib/forex-data";
+import {
+  createTestimonial,
+  loadApprovedTestimonials,
+  MAX_TESTIMONIAL_LENGTH,
+  MIN_TESTIMONIAL_LENGTH,
+  newTestimonialId,
+} from "@/lib/testimonials";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
@@ -346,7 +354,7 @@ function DualServices() {
 function StatsSection() {
   return (
     <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
-      <div className="grid gap-6 rounded-3xl border border-border bg-secondary/60 p-8 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 rounded-3xl border border-border bg-secondary/60 p-8 sm:grid-cols-2 lg:grid-cols-3">
         {STATS.map((s, i) => (
           <StatItem key={s.label} {...s} delay={i * 100} />
         ))}
@@ -381,6 +389,46 @@ function StatItem({
 }
 
 function TestimonialsSection() {
+  const [visitorTestimonials, setVisitorTestimonials] = useState<
+    { id: string; createdAt: number; content: string }[]
+  >([]);
+  const [draft, setDraft] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    loadApprovedTestimonials()
+      .then(setVisitorTestimonials)
+      .catch(() => {
+        /* backend unavailable — section still renders static testimonials */
+      });
+  }, []);
+
+  const submitTestimonial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const content = draft.trim();
+    if (content.length < MIN_TESTIMONIAL_LENGTH) {
+      toast.error("Please write at least a couple of lines about your experience");
+      return;
+    }
+    if (content.length > MAX_TESTIMONIAL_LENGTH) {
+      toast.error(`Please keep your testimonial under ${MAX_TESTIMONIAL_LENGTH} characters`);
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await createTestimonial({ id: newTestimonialId(), createdAt: Date.now(), content });
+      setDraft("");
+      toast.success("Thank you! Your testimonial will appear on the site after review.");
+    } catch {
+      toast.error("Could not submit your testimonial right now. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const staticCards = TESTIMONIALS.slice(0, 6);
+  const visitorCards = visitorTestimonials.slice(0, 9 - staticCards.length);
+
   return (
     <section className="bg-secondary/50 py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -392,7 +440,7 @@ function TestimonialsSection() {
         </Reveal>
 
         <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {TESTIMONIALS.slice(0, 6).map((t, i) => (
+          {staticCards.map((t, i) => (
             <Reveal key={t.name} delay={i * 90} className="surface-card hover-lift relative p-6">
               <Quote className="absolute right-5 top-5 h-8 w-8 text-primary/10" />
               <div className="flex gap-1 text-gold">
@@ -405,7 +453,59 @@ function TestimonialsSection() {
               <p className="text-xs text-muted-foreground">{t.place}</p>
             </Reveal>
           ))}
+          {visitorCards.map((t, i) => (
+            <Reveal
+              key={t.id}
+              delay={(staticCards.length + i) * 90}
+              className="surface-card hover-lift relative p-6"
+            >
+              <Quote className="absolute right-5 top-5 h-8 w-8 text-primary/10" />
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t.content}</p>
+              <p className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                Verified visitor
+              </p>
+            </Reveal>
+          ))}
         </div>
+
+        <Reveal className="surface-card mx-auto mt-10 max-w-2xl p-6 sm:p-8">
+          <h3 className="font-display text-xl font-bold text-navy">Share your experience</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Used our currency exchange, forex card or money transfer service? Write a few words — it
+            helps other travellers. Your testimonial is reviewed before it appears above.
+          </p>
+          <form onSubmit={submitTestimonial} className="mt-5">
+            <label
+              htmlFor="visitor-testimonial"
+              className="mb-2 block text-xs font-semibold text-muted-foreground"
+            >
+              Your testimonial (text only)
+            </label>
+            <textarea
+              id="visitor-testimonial"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={4}
+              maxLength={MAX_TESTIMONIAL_LENGTH}
+              placeholder="Kirat Forex made currency exchange for my trip quick and easy…"
+              className="w-full resize-y rounded-xl border border-input bg-background px-4 py-3 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-ring/40"
+            />
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-xs text-muted-foreground">
+                {draft.trim().length}/{MAX_TESTIMONIAL_LENGTH} characters
+              </span>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold uppercase tracking-wide text-primary-foreground shadow-[var(--shadow-glow)] transition-transform duration-300 hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                {submitting ? "Submitting…" : "Submit testimonial"}
+                <Send className="h-4 w-4" />
+              </button>
+            </div>
+          </form>
+        </Reveal>
       </div>
     </section>
   );

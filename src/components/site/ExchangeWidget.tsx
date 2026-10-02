@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { CURRENCIES, RATE_UPDATED } from "@/lib/forex-data";
 import { loadPaymentSettings, newQuoteId, saveQuote } from "@/lib/quotes";
+import { sendQuoteEmails } from "@/lib/email";
 import { loadDailyRates, getLastUpdated } from "@/lib/daily-rates";
 import { loadCustomCurrencies } from "@/lib/custom-currencies";
 import { RateTicker } from "./RateTicker";
@@ -97,11 +98,12 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
       return;
     }
     const id = newQuoteId();
+    const createdAt = Date.now();
     const { advancePercent } = await loadPaymentSettings();
-    await saveQuote({
+    const quote = {
       id,
-      createdAt: Date.now(),
-      mode: tab === "sell" ? "sell" : "buy",
+      createdAt,
+      mode: (tab === "sell" ? "sell" : "buy") as "buy" | "sell",
       code,
       fxAmount: fxNum.toString(),
       inrAmount: inrNum.toFixed(2),
@@ -110,8 +112,11 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
       email,
       advance: ((inrNum * advancePercent) / 100).toFixed(2),
       reference: id,
-      status: "pending",
-    });
+      status: "pending" as const,
+    };
+    await saveQuote(quote);
+    // Fire-and-forget: quote saving and navigation must never wait on email delivery.
+    void sendQuoteEmails(quote);
     toast.success("Quote created — pay the advance to confirm.");
     setMobile("");
     setEmail("");

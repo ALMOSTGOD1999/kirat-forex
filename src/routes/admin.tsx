@@ -26,6 +26,12 @@ import {
 } from "@/lib/quotes";
 import { loadDailyRates, saveDailyRates, type DailyRate } from "@/lib/daily-rates";
 import { loadCustomCurrencies, saveCustomCurrency, deleteCustomCurrency, type CustomCurrency } from "@/lib/custom-currencies";
+import {
+  deleteTestimonial,
+  loadAllTestimonials,
+  setTestimonialStatus,
+  type Testimonial,
+} from "@/lib/testimonials";
 import { CURRENCIES } from "@/lib/forex-data";
 
 
@@ -50,7 +56,7 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminPage() {
-  const [panel, setPanel] = useState<"slides" | "requests" | "rates">("slides");
+  const [panel, setPanel] = useState<"slides" | "requests" | "rates" | "testimonials">("slides");
   const { user, isAdmin } = useAuth();
 
   if (!isAdmin) {
@@ -94,6 +100,7 @@ function AdminPage() {
               ["slides", "Hero slideshow"],
               ["rates", "Daily rates"],
               ["requests", "Quote requests"],
+              ["testimonials", "Testimonials"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -112,8 +119,121 @@ function AdminPage() {
           ))}
         </div>
       </section>
-      {panel === "slides" ? <SlidesPanel /> : panel === "rates" ? <RatesPanel /> : <RequestsPanel />}
+      {panel === "slides" ? (
+        <SlidesPanel />
+      ) : panel === "rates" ? (
+        <RatesPanel />
+      ) : panel === "requests" ? (
+        <RequestsPanel />
+      ) : (
+        <TestimonialsPanel />
+      )}
     </div>
+  );
+}
+
+function TestimonialsPanel() {
+  const [items, setItems] = useState<Testimonial[]>([]);
+
+  const refresh = () => {
+    loadAllTestimonials()
+      .then(setItems)
+      .catch(() => toast.error("Could not load testimonials"));
+  };
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const approve = async (id: string) => {
+    await setTestimonialStatus(id, "approved");
+    toast.success("Testimonial approved — it is now live on the home page");
+    refresh();
+  };
+
+  const unpublish = async (id: string) => {
+    await setTestimonialStatus(id, "pending");
+    toast("Testimonial hidden");
+    refresh();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm("Delete this testimonial permanently?")) return;
+    await deleteTestimonial(id);
+    toast.success("Testimonial deleted");
+    refresh();
+  };
+
+  return (
+    <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="surface-card p-6">
+        <h2 className="text-lg font-bold text-navy">Visitor testimonials ({items.length})</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Submissions from the home page. Approved testimonials are shown publicly.
+        </p>
+        <div className="mt-5 grid gap-4">
+          {items.length === 0 && (
+            <p className="rounded-xl bg-secondary px-4 py-3 text-sm text-muted-foreground">
+              No submissions yet.
+            </p>
+          )}
+          {items.map((t) => (
+            <div
+              key={t.id}
+              className="grid gap-4 rounded-xl border border-border bg-background p-5 sm:grid-cols-[1fr_auto]"
+            >
+              <div className="grid gap-2 text-sm">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span
+                    className={
+                      t.status === "approved"
+                        ? "rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary"
+                        : "rounded-full bg-secondary px-3 py-1 text-xs font-bold text-navy"
+                    }
+                  >
+                    {t.status}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(t.createdAt).toLocaleString()}
+                  </span>
+                </div>
+                <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">
+                  {t.content}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {t.status !== "approved" && (
+                  <button
+                    type="button"
+                    onClick={() => approve(t.id)}
+                    className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-primary-foreground"
+                    style={{ background: "var(--gradient-primary)" }}
+                  >
+                    <Check className="h-3.5 w-3.5" /> Approve
+                  </button>
+                )}
+                {t.status === "approved" && (
+                  <button
+                    type="button"
+                    onClick={() => unpublish(t.id)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-accent"
+                  >
+                    <X className="h-3.5 w-3.5" /> Unpublish
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => remove(t.id)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 

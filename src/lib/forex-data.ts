@@ -105,7 +105,6 @@ export const STATS = [
   { value: 10000, suffix: "+", label: "Happy Customers" },
   { value: 20000, suffix: "", label: "Transactions" },
   { value: 5, suffix: "K+", label: "Reviews" },
-  { value: 165, suffix: "+", label: "Countries Covered" },
 ];
 
 export const TESTIMONIALS = [

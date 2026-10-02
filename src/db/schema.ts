@@ -71,3 +71,11 @@ export const customCurrencies = pgTable("custom_currencies", {
   symbol: text("symbol").notNull(), // "د.ك"
   flag: text("flag").notNull(), // emoji flag "🇰🇼"
 });
+
+// ─── Visitor Testimonials (text only, moderated) ────────────────────────────
+export const testimonials = pgTable("testimonials", {
+  id: text("id").primaryKey(),
+  createdAt: integer("created_at").notNull(),
+  content: text("content").notNull(),
+  status: text("status").notNull().default("pending"), // "pending" | "approved"
+});
