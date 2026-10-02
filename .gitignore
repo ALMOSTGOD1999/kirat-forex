@@ -39,3 +39,6 @@ drizzle/
 *.sln
 *.sw?
 mobile-home*.png
+
+# Lovable scaffold metadata
+.lovable/
