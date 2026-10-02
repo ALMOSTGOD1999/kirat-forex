@@ -142,8 +142,8 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
   };
 
   const tabs: { id: Tab; label: string; icon: typeof Banknote }[] = [
-    { id: "buy", label: "We Buy Forex", icon: CreditCard },
-    { id: "sell", label: "We Sale Forex", icon: Banknote },
+    { id: "buy", label: "We Buy", icon: CreditCard },
+    { id: "sell", label: "We Sale", icon: Banknote },
     { id: "rates", label: "Rates", icon: Table2 },
   ];
 
