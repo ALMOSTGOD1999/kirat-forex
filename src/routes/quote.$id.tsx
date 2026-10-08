@@ -123,6 +123,7 @@ function QuotePage() {
                 <Row label="Rate" value={`1 ${quote.code} = ₹ ${quote.rate}`} />
                 <Row label="Total INR" value={`₹ ${quote.inrAmount}`} />
                 <Row label="Advance payable" value={`₹ ${quote.advance}`} />
+                {quote.name && <Row label="Name" value={quote.name} />}
                 <Row label="Mobile" value={`+91 ${quote.mobile}`} />
                 <Row label="Email" value={quote.email} />
               </div>

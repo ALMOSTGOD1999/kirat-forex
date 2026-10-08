@@ -65,6 +65,7 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
   const [fx, setFx] = useState("");
   const [inr, setInr] = useState("");
   const [lastEdited, setLastEdited] = useState<"fx" | "inr">("fx");
+  const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [email, setEmail] = useState("");
   const [accepted, setAccepted] = useState(true);
@@ -103,6 +104,10 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
       toast.error("Enter the amount you want to exchange");
       return;
     }
+    if (name.trim().length < 2 || name.trim().length > 60) {
+      toast.error("Please enter your name (2-60 characters)");
+      return;
+    }
     if (!/^\d{10}$/.test(mobile)) {
       toast.error("Enter a valid 10 digit mobile number");
       return;
@@ -126,6 +131,7 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
       fxAmount: fxNum.toString(),
       inrAmount: inrNum.toFixed(2),
       rate,
+      name: name.trim(),
       mobile,
       email,
       advance: ((inrNum * advancePercent) / 100).toFixed(2),
@@ -136,6 +142,7 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
     // Fire-and-forget: quote saving and navigation must never wait on email delivery.
     void sendQuoteEmails(quote);
     toast.success("Quote created — pay the advance to confirm.");
+    setName("");
     setMobile("");
     setEmail("");
     void navigate({ to: "/quote/$id", params: { id } });
@@ -247,6 +254,18 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
               Share details to view quote
             </h3>
             <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className="mb-2 block text-xs font-semibold text-muted-foreground">
+                  Full Name
+                </label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter Your Full Name"
+                  autoComplete="name"
+                  className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring/40"
+                />
+              </div>
               <div>
                 <label className="mb-2 block text-xs font-semibold text-muted-foreground">
                   Mobile Number

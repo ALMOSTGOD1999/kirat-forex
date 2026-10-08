@@ -376,7 +376,7 @@ function RequestsPanel() {
                 {q.inrAmount} • Advance ₹{q.advance}
               </span>
               <span className="text-muted-foreground">
-                +91 {q.mobile} • {q.email}
+                {q.name ? `${q.name} • ` : ""}+91 {q.mobile} • {q.email}
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2">

@@ -27,6 +27,7 @@ export const quoteRequests = pgTable("quote_requests", {
   fxAmount: text("fx_amount").notNull(),
   inrAmount: text("inr_amount").notNull(),
   rate: real("rate").notNull(),
+  name: text("name").notNull().default(""),
   mobile: text("mobile").notNull(),
   email: text("email").notNull(),
   advance: text("advance").notNull(),

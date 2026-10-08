@@ -10,6 +10,7 @@ export type QuoteRequest = {
   fxAmount: string;
   inrAmount: string;
   rate: number;
+  name: string;
   mobile: string;
   email: string;
   advance: string;
@@ -62,6 +63,7 @@ const loadQuotesServer = createServerFn({ method: "GET" }).handler(async () => {
     fxAmount: r.fxAmount,
     inrAmount: r.inrAmount,
     rate: r.rate,
+    name: r.name,
     mobile: r.mobile,
     email: r.email,
     advance: r.advance,
@@ -93,6 +95,7 @@ const getQuoteServer = createServerFn({ method: "GET" })
       fxAmount: r.fxAmount,
       inrAmount: r.inrAmount,
       rate: r.rate,
+      name: r.name,
       mobile: r.mobile,
       email: r.email,
       advance: r.advance,
@@ -111,6 +114,7 @@ const saveQuoteServer = createServerFn({ method: "POST" })
       fxAmount: string;
       inrAmount: string;
       rate: number;
+      name: string;
       mobile: string;
       email: string;
       advance: string;
@@ -132,6 +136,7 @@ const saveQuoteServer = createServerFn({ method: "POST" })
         fxAmount: data.fxAmount,
         inrAmount: data.inrAmount,
         rate: data.rate,
+        name: data.name,
         mobile: data.mobile,
         email: data.email,
         advance: data.advance,
@@ -146,6 +151,7 @@ const saveQuoteServer = createServerFn({ method: "POST" })
           fxAmount: data.fxAmount,
           inrAmount: data.inrAmount,
           rate: data.rate,
+          name: data.name,
           mobile: data.mobile,
           email: data.email,
           advance: data.advance,
