@@ -1,4 +1,4 @@
-import { pgTable, text, integer, real } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, bigint, real } from "drizzle-orm/pg-core";
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 export const users = pgTable("users", {
@@ -20,7 +20,8 @@ export const sessions = pgTable("sessions", {
 // ─── Quote Requests ──────────────────────────────────────────────────────────
 export const quoteRequests = pgTable("quote_requests", {
   id: text("id").primaryKey(),
-  createdAt: integer("created_at").notNull(),
+  // bigint: Date.now() ms exceeds int4 range (2.1e9)
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
   mode: text("mode").notNull(), // "buy" | "sell"
   code: text("code").notNull(),
   fxAmount: text("fx_amount").notNull(),
@@ -75,7 +76,8 @@ export const customCurrencies = pgTable("custom_currencies", {
 // ─── Visitor Testimonials (text only, moderated) ────────────────────────────
 export const testimonials = pgTable("testimonials", {
   id: text("id").primaryKey(),
-  createdAt: integer("created_at").notNull(),
+  // bigint: Date.now() ms exceeds int4 range (2.1e9)
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
   content: text("content").notNull(),
   status: text("status").notNull().default("pending"), // "pending" | "approved"
 });
