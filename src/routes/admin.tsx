@@ -204,6 +204,7 @@ function TestimonialsPanel() {
                     {new Date(t.createdAt).toLocaleString()}
                   </span>
                 </div>
+                <p className="font-semibold text-navy">{t.name || "Anonymous"}</p>
                 <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">
                   {t.content}
                 </p>
@@ -373,7 +374,10 @@ function RequestsPanel() {
               </div>
               <span className="text-muted-foreground">
                 {q.mode === "buy" ? "Buy" : "Sell"} {q.fxAmount} {q.code} @ ₹{q.rate} • Total ₹
-                {q.inrAmount} • Advance ₹{q.advance}
+                {q.inrAmount} •{" "}
+                {q.mode === "buy" && parseFloat(q.advance || "0") > 0
+                  ? `Advance ₹${q.advance}`
+                  : "No advance"}
               </span>
               <span className="text-muted-foreground">
                 {q.name ? `${q.name} • ` : ""}+91 {q.mobile} • {q.email}

@@ -390,8 +390,9 @@ function StatItem({
 
 function TestimonialsSection() {
   const [visitorTestimonials, setVisitorTestimonials] = useState<
-    { id: string; createdAt: number; content: string }[]
+    { id: string; createdAt: number; name: string; content: string }[]
   >([]);
+  const [authorName, setAuthorName] = useState("");
   const [draft, setDraft] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -406,6 +407,11 @@ function TestimonialsSection() {
   const submitTestimonial = async (e: React.FormEvent) => {
     e.preventDefault();
     const content = draft.trim();
+    const name = authorName.trim();
+    if (name.length < 2 || name.length > 60) {
+      toast.error("Please enter your name (2-60 characters)");
+      return;
+    }
     if (content.length < MIN_TESTIMONIAL_LENGTH) {
       toast.error("Please write at least a couple of lines about your experience");
       return;
@@ -416,7 +422,8 @@ function TestimonialsSection() {
     }
     setSubmitting(true);
     try {
-      await createTestimonial({ id: newTestimonialId(), createdAt: Date.now(), content });
+      await createTestimonial({ id: newTestimonialId(), createdAt: Date.now(), name, content });
+      setAuthorName("");
       setDraft("");
       toast.success("Thank you! Your testimonial will appear on the site after review.");
     } catch {
@@ -461,7 +468,14 @@ function TestimonialsSection() {
             >
               <Quote className="absolute right-5 top-5 h-8 w-8 text-primary/10" />
               <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t.content}</p>
-              <p className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              {t.name && <p className="mt-5 text-sm font-bold text-navy">{t.name}</p>}
+              <p
+                className={
+                  t.name
+                    ? "text-xs uppercase tracking-[0.2em] text-primary"
+                    : "mt-5 text-xs uppercase tracking-[0.2em] text-primary"
+                }
+              >
                 Verified visitor
               </p>
             </Reveal>
@@ -475,6 +489,21 @@ function TestimonialsSection() {
             helps other travellers. Your testimonial is reviewed before it appears above.
           </p>
           <form onSubmit={submitTestimonial} className="mt-5">
+            <label
+              htmlFor="visitor-name"
+              className="mb-2 block text-xs font-semibold text-muted-foreground"
+            >
+              Your name
+            </label>
+            <input
+              id="visitor-name"
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
+              maxLength={60}
+              placeholder="e.g. Rahul Sharma"
+              autoComplete="name"
+              className="mb-4 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring/40"
+            />
             <label
               htmlFor="visitor-testimonial"
               className="mb-2 block text-xs font-semibold text-muted-foreground"

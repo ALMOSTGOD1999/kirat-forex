@@ -31,10 +31,10 @@ export type PaymentSettings = {
 
 export const DEFAULT_PAYMENT: PaymentSettings = {
   bankName: "HDFC Bank",
-  accountName: "Kirat Forex Pvt. Ltd.",
-  accountNumber: "50200071234567",
-  ifsc: "HDFC0001234",
-  branch: "Berhampore, Murshidabad",
+  accountName: "Kirat Forex Private Limited",
+  accountNumber: "50200114715645",
+  ifsc: "HDFC0000639",
+  branch: "37/A R N Tagore Road, Berhampore, Murshidabad",
   upiId: "kiratforex@hdfcbank",
   qrImage: "",
   advancePercent: 10,

@@ -19,7 +19,7 @@ export type QuoteEmailPayload = {
 
 export type EmailResult = { sent: boolean; reason?: string };
 
-const ADMIN_EMAIL = COMPANY.email; // info@kiratforex.com
+const ADMIN_EMAIL = "kirat.forex@gmail.com"; // company notification inbox
 const DEFAULT_FROM = "Kirat Forex <onboarding@resend.dev>";
 const SITE_URL = "https://kiratforex.com";
 const LOGO_URL = `${SITE_URL}/kirat-forex-logo.png`;
@@ -57,13 +57,14 @@ function currencyName(code: string): string {
 }
 
 function detailRows(q: QuoteEmailPayload): [string, string][] {
+  const needsAdvance = q.mode === "buy" && parseFloat(q.advance || "0") > 0;
   return [
     ["Full name", q.name || "—"],
     ["Mobile", `+91 ${q.mobile}`],
     ["Email", q.email],
     ["Quote reference", q.reference],
     ["Requested on", formatDate(q.createdAt)],
-    ["Advance payable", `₹ ${q.advance}`],
+    ["Advance payable", needsAdvance ? `₹ ${q.advance}` : "Not required (sell order)"],
     ["Status", q.status],
   ];
 }

@@ -122,11 +122,12 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
     }
     const id = newQuoteId();
     const createdAt = Date.now();
+    const isSell = tab === "sell";
     const { advancePercent } = await loadPaymentSettings();
     const quote = {
       id,
       createdAt,
-      mode: (tab === "sell" ? "sell" : "buy") as "buy" | "sell",
+      mode: (isSell ? "sell" : "buy") as "buy" | "sell",
       code,
       fxAmount: fxNum.toString(),
       inrAmount: inrNum.toFixed(2),
@@ -134,7 +135,8 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
       name: name.trim(),
       mobile,
       email,
-      advance: ((inrNum * advancePercent) / 100).toFixed(2),
+      // Customers who sell forex to us pay nothing upfront — no advance.
+      advance: isSell ? "0.00" : ((inrNum * advancePercent) / 100).toFixed(2),
       reference: id,
       status: "pending" as const,
     };

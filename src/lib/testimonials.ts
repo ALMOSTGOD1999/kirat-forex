@@ -5,6 +5,7 @@ export type TestimonialStatus = "pending" | "approved";
 export type Testimonial = {
   id: string;
   createdAt: number;
+  name: string;
   content: string;
   status: TestimonialStatus;
 };
@@ -19,7 +20,7 @@ export function newTestimonialId(): string {
 // ─── Server Functions ────────────────────────────────────────────────────────
 
 const createTestimonialServer = createServerFn({ method: "POST" })
-  .validator((input: { id: string; createdAt: number; content: string }) => input)
+  .validator((input: { id: string; createdAt: number; name: string; content: string }) => input)
   .handler(async ({ data }) => {
     const content = data.content.trim();
     if (content.length < MIN_TESTIMONIAL_LENGTH) {
@@ -34,6 +35,7 @@ const createTestimonialServer = createServerFn({ method: "POST" })
     await db.insert(testimonials).values({
       id: data.id,
       createdAt: data.createdAt,
+      name: data.name.trim().slice(0, 60),
       content,
       status: "pending",
     });
@@ -53,6 +55,7 @@ const loadApprovedTestimonialsServer = createServerFn({ method: "GET" }).handler
   return rows.map((r) => ({
     id: r.id,
     createdAt: r.createdAt,
+    name: r.name,
     content: r.content,
   }));
 });
@@ -67,6 +70,7 @@ const loadAllTestimonialsServer = createServerFn({ method: "GET" }).handler(asyn
   return rows.map((r) => ({
     id: r.id,
     createdAt: r.createdAt,
+    name: r.name,
     content: r.content,
     status: r.status as TestimonialStatus,
   }));
@@ -97,13 +101,14 @@ const deleteTestimonialServer = createServerFn({ method: "POST" })
 export async function createTestimonial(input: {
   id: string;
   createdAt: number;
+  name: string;
   content: string;
 }): Promise<void> {
   await createTestimonialServer({ data: input });
 }
 
 export async function loadApprovedTestimonials(): Promise<
-  { id: string; createdAt: number; content: string }[]
+  { id: string; createdAt: number; name: string; content: string }[]
 > {
   return await loadApprovedTestimonialsServer();
 }
