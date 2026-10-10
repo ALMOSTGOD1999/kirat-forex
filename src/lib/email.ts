@@ -57,14 +57,14 @@ function currencyName(code: string): string {
 }
 
 function detailRows(q: QuoteEmailPayload): [string, string][] {
-  const needsAdvance = q.mode === "buy" && parseFloat(q.advance || "0") > 0;
+  const needsAdvance = parseFloat(q.advance || "0") > 0;
   return [
     ["Full name", q.name || "—"],
     ["Mobile", `+91 ${q.mobile}`],
     ["Email", q.email],
     ["Quote reference", q.reference],
     ["Requested on", formatDate(q.createdAt)],
-    ["Advance payable", needsAdvance ? `₹ ${q.advance}` : "Not required (sell order)"],
+    ["Advance payable", needsAdvance ? `₹ ${q.advance}` : "Not required"],
     ["Status", q.status],
   ];
 }

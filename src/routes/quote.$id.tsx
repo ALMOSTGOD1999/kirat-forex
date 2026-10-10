@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BadgeCheck, Building2, Clock3, Copy, QrCode, ShieldCheck, XCircle } from "lucide-react";
+import { BadgeCheck, Building2, Clock3, Copy, ShieldCheck, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { PageHero } from "@/components/site/PageHero";
 import {
@@ -19,12 +19,12 @@ export const Route = createFileRoute("/quote/$id")({
       {
         name: "description",
         content:
-          "Review your forex quote, pay the advance to Kirat Forex via bank transfer or UPI QR, and track approval from our Murshidabad desk.",
+          "Review your forex quote, pay the advance to Kirat Forex via bank transfer, and track approval from our Murshidabad desk.",
       },
       { property: "og:title", content: "Confirm Your Forex Quote | Kirat Forex" },
       {
         property: "og:description",
-        content: "Pay the advance amount by bank transfer or UPI QR and await approval.",
+        content: "Pay the advance amount by bank transfer and await approval.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -66,9 +66,10 @@ function QuotePage() {
   const [pay, setPay] = useState<PaymentSettings>(DEFAULT_PAYMENT);
   const [ready, setReady] = useState(false);
 
-  // Sell orders (customer sells forex to us) never require an advance payment.
+  // "We Buy" (platform buys currency from the customer) requires no advance.
+  // Only "We Sale" orders (platform sells to the customer) are payable upfront.
   const needsAdvance =
-    quote !== null && quote.mode === "buy" && parseFloat(quote.advance || "0") > 0;
+    quote !== null && quote.mode === "sell" && parseFloat(quote.advance || "0") > 0;
 
   useEffect(() => {
     const sync = async () => {
@@ -91,8 +92,8 @@ function QuotePage() {
         eyebrow="Step 2 of 2"
         title="Confirm your quote"
         sub={
-          quote?.mode === "sell"
-            ? "You are selling forex to us — nothing to pay upfront. Our Murshidabad desk will call you to confirm."
+          quote?.mode === "buy"
+            ? "No payment needed from your side — our Murshidabad desk will call you to confirm the request."
             : "Pay the advance to lock your rate. Our Murshidabad desk approves your order right after."
         }
       />
@@ -116,7 +117,9 @@ function QuotePage() {
             </Link>
           </div>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[1.05fr_1fr]">
+          <div
+            className={needsAdvance ? "grid gap-6 lg:grid-cols-[1.05fr_1fr]" : "mx-auto max-w-3xl"}
+          >
             <div className="surface-card animate-fade-in p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-lg font-bold text-navy">Order summary</h2>
@@ -130,10 +133,7 @@ function QuotePage() {
                 />
                 <Row label="Rate" value={`1 ${quote.code} = ₹ ${quote.rate}`} />
                 <Row label="Total INR" value={`₹ ${quote.inrAmount}`} />
-                <Row
-                  label="Advance payable"
-                  value={needsAdvance ? `₹ ${quote.advance}` : "Not required"}
-                />
+                {needsAdvance && <Row label="Advance payable" value={`₹ ${quote.advance}`} />}
                 {quote.name && <Row label="Name" value={quote.name} />}
                 <Row label="Mobile" value={`+91 ${quote.mobile}`} />
                 <Row label="Email" value={quote.email} />
@@ -152,6 +152,9 @@ function QuotePage() {
                   </>
                 )}
               </p>
+              {!needsAdvance && (
+                <p className="mt-4 text-xs italic text-muted-foreground">*GST applicable</p>
+              )}
             </div>
 
             {needsAdvance ? (
@@ -165,28 +168,6 @@ function QuotePage() {
                   <Row label="Account no." value={pay.accountNumber} copy />
                   <Row label="IFSC" value={pay.ifsc} copy />
                   <Row label="Branch" value={pay.branch} />
-                  <Row label="UPI ID" value={pay.upiId} copy />
-                </div>
-
-                <div className="mt-5 grid place-items-center rounded-xl border border-dashed border-border bg-secondary p-5">
-                  {pay.qrImage ? (
-                    <img
-                      src={pay.qrImage}
-                      alt={`UPI payment QR code for ${pay.accountName}`}
-                      className="h-48 w-48 rounded-lg bg-background object-contain p-2"
-                    />
-                  ) : (
-                    <div className="grid h-48 w-48 place-items-center rounded-lg bg-background text-center text-xs text-muted-foreground">
-                      <span>
-                        <QrCode className="mx-auto mb-2 h-8 w-8 text-primary" />
-                        QR code will appear here once uploaded by the admin
-                      </span>
-                    </div>
-                  )}
-                  <p className="mt-3 text-center text-xs text-muted-foreground">
-                    Scan with any UPI app and use reference{" "}
-                    <span className="font-bold text-navy">{quote.reference}</span>
-                  </p>
                 </div>
 
                 <div className="mt-5 flex items-start gap-2 rounded-xl bg-accent/60 px-4 py-3 text-xs text-navy">
@@ -195,28 +176,7 @@ function QuotePage() {
                   <span className="font-bold">Approved</span> once our team verifies your advance.
                 </div>
               </div>
-            ) : (
-              <div className="surface-card animate-fade-in p-6">
-                <h2 className="flex items-center gap-2 text-lg font-bold text-navy">
-                  <BadgeCheck className="h-5 w-5 text-primary" /> No advance needed
-                </h2>
-                <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                  You are selling{" "}
-                  <span className="font-bold text-navy">
-                    {quote.fxAmount} {quote.code}
-                  </span>{" "}
-                  to us — nothing to pay from your side. Our team will call you to confirm the
-                  collection and credit{" "}
-                  <span className="font-bold text-navy">₹ {quote.inrAmount}</span> to your account
-                  directly.
-                </p>
-                <div className="mt-5 flex items-start gap-2 rounded-xl bg-accent/60 px-4 py-3 text-xs text-navy">
-                  <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  Keep this page handy — the status updates to{" "}
-                  <span className="font-bold">Approved</span> once our team confirms your request.
-                </div>
-              </div>
-            )}
+            ) : null}
           </div>
         )}
       </section>

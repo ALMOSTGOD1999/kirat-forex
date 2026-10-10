@@ -375,9 +375,7 @@ function RequestsPanel() {
               <span className="text-muted-foreground">
                 {q.mode === "buy" ? "Buy" : "Sell"} {q.fxAmount} {q.code} @ ₹{q.rate} • Total ₹
                 {q.inrAmount} •{" "}
-                {q.mode === "buy" && parseFloat(q.advance || "0") > 0
-                  ? `Advance ₹${q.advance}`
-                  : "No advance"}
+                {parseFloat(q.advance || "0") > 0 ? `Advance ₹${q.advance}` : "No advance"}
               </span>
               <span className="text-muted-foreground">
                 {q.name ? `${q.name} • ` : ""}+91 {q.mobile} • {q.email}

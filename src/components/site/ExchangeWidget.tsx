@@ -135,15 +135,20 @@ export function ExchangeWidget({ initialTab = "buy" }: { initialTab?: Tab }) {
       name: name.trim(),
       mobile,
       email,
-      // Customers who sell forex to us pay nothing upfront — no advance.
-      advance: isSell ? "0.00" : ((inrNum * advancePercent) / 100).toFixed(2),
+      // "We Buy" = the platform buys currency from the customer — nothing upfront.
+      // "We Sale" = the customer buys from us — 10% advance locks the rate.
+      advance: tab === "buy" ? "0.00" : ((inrNum * advancePercent) / 100).toFixed(2),
       reference: id,
       status: "pending" as const,
     };
     await saveQuote(quote);
     // Fire-and-forget: quote saving and navigation must never wait on email delivery.
     void sendQuoteEmails(quote);
-    toast.success("Quote created — pay the advance to confirm.");
+    toast.success(
+      tab === "buy"
+        ? "Quote created — our team will call you to confirm."
+        : "Quote created — pay the advance to confirm.",
+    );
     setName("");
     setMobile("");
     setEmail("");
