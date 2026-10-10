@@ -80,6 +80,7 @@ export const testimonials = pgTable("testimonials", {
   // bigint: Date.now() ms exceeds int4 range (2.1e9)
   createdAt: bigint("created_at", { mode: "number" }).notNull(),
   name: text("name").notNull().default(""),
+  address: text("address").notNull().default(""),
   content: text("content").notNull(),
   status: text("status").notNull().default("pending"), // "pending" | "approved"
 });

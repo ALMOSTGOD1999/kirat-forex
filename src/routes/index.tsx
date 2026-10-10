@@ -390,9 +390,10 @@ function StatItem({
 
 function TestimonialsSection() {
   const [visitorTestimonials, setVisitorTestimonials] = useState<
-    { id: string; createdAt: number; name: string; content: string }[]
+    { id: string; createdAt: number; name: string; address: string; content: string }[]
   >([]);
   const [authorName, setAuthorName] = useState("");
+  const [authorAddress, setAuthorAddress] = useState("");
   const [draft, setDraft] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -408,8 +409,13 @@ function TestimonialsSection() {
     e.preventDefault();
     const content = draft.trim();
     const name = authorName.trim();
+    const address = authorAddress.trim();
     if (name.length < 2 || name.length > 60) {
       toast.error("Please enter your name (2-60 characters)");
+      return;
+    }
+    if (address.length < 3 || address.length > 120) {
+      toast.error("Please enter your address (3-120 characters)");
       return;
     }
     if (content.length < MIN_TESTIMONIAL_LENGTH) {
@@ -422,8 +428,15 @@ function TestimonialsSection() {
     }
     setSubmitting(true);
     try {
-      await createTestimonial({ id: newTestimonialId(), createdAt: Date.now(), name, content });
+      await createTestimonial({
+        id: newTestimonialId(),
+        createdAt: Date.now(),
+        name,
+        address,
+        content,
+      });
       setAuthorName("");
+      setAuthorAddress("");
       setDraft("");
       toast.success("Thank you! Your testimonial will appear on the site after review.");
     } catch {
@@ -468,10 +481,11 @@ function TestimonialsSection() {
             >
               <Quote className="absolute right-5 top-5 h-8 w-8 text-primary/10" />
               <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t.content}</p>
-              {t.name && <p className="mt-5 text-sm font-bold text-navy">{t.name}</p>}
+              <p className="mt-5 text-sm font-bold text-navy">{t.name}</p>
+              {t.address && <p className="text-xs text-muted-foreground">{t.address}</p>}
               <p
                 className={
-                  t.name
+                  t.name || t.address
                     ? "text-xs uppercase tracking-[0.2em] text-primary"
                     : "mt-5 text-xs uppercase tracking-[0.2em] text-primary"
                 }
@@ -502,6 +516,21 @@ function TestimonialsSection() {
               maxLength={60}
               placeholder="e.g. Rahul Sharma"
               autoComplete="name"
+              className="mb-4 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring/40"
+            />
+            <label
+              htmlFor="visitor-address"
+              className="mb-2 block text-xs font-semibold text-muted-foreground"
+            >
+              Your address
+            </label>
+            <input
+              id="visitor-address"
+              value={authorAddress}
+              onChange={(e) => setAuthorAddress(e.target.value)}
+              maxLength={120}
+              placeholder="e.g. Berhampore, Murshidabad"
+              autoComplete="street-address"
               className="mb-4 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring/40"
             />
             <label

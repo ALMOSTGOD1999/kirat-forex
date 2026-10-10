@@ -6,6 +6,7 @@ export type Testimonial = {
   id: string;
   createdAt: number;
   name: string;
+  address: string;
   content: string;
   status: TestimonialStatus;
 };
@@ -20,7 +21,15 @@ export function newTestimonialId(): string {
 // ─── Server Functions ────────────────────────────────────────────────────────
 
 const createTestimonialServer = createServerFn({ method: "POST" })
-  .validator((input: { id: string; createdAt: number; name: string; content: string }) => input)
+  .validator(
+    (input: {
+      id: string;
+      createdAt: number;
+      name: string;
+      address: string;
+      content: string;
+    }) => input,
+  )
   .handler(async ({ data }) => {
     const content = data.content.trim();
     if (content.length < MIN_TESTIMONIAL_LENGTH) {
@@ -36,6 +45,7 @@ const createTestimonialServer = createServerFn({ method: "POST" })
       id: data.id,
       createdAt: data.createdAt,
       name: data.name.trim().slice(0, 60),
+      address: data.address.trim().slice(0, 120),
       content,
       status: "pending",
     });
@@ -56,6 +66,7 @@ const loadApprovedTestimonialsServer = createServerFn({ method: "GET" }).handler
     id: r.id,
     createdAt: r.createdAt,
     name: r.name,
+    address: r.address,
     content: r.content,
   }));
 });
@@ -71,6 +82,7 @@ const loadAllTestimonialsServer = createServerFn({ method: "GET" }).handler(asyn
     id: r.id,
     createdAt: r.createdAt,
     name: r.name,
+    address: r.address,
     content: r.content,
     status: r.status as TestimonialStatus,
   }));
@@ -102,13 +114,14 @@ export async function createTestimonial(input: {
   id: string;
   createdAt: number;
   name: string;
+  address: string;
   content: string;
 }): Promise<void> {
   await createTestimonialServer({ data: input });
 }
 
 export async function loadApprovedTestimonials(): Promise<
-  { id: string; createdAt: number; name: string; content: string }[]
+  { id: string; createdAt: number; name: string; address: string; content: string }[]
 > {
   return await loadApprovedTestimonialsServer();
 }

@@ -204,7 +204,14 @@ function TestimonialsPanel() {
                     {new Date(t.createdAt).toLocaleString()}
                   </span>
                 </div>
-                <p className="font-semibold text-navy">{t.name || "Anonymous"}</p>
+                <p className="font-semibold text-navy">
+                  {t.name || "Anonymous"}
+                  {t.address && (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      {t.address}
+                    </span>
+                  )}
+                </p>
                 <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">
                   {t.content}
                 </p>
