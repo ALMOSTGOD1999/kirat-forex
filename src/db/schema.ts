@@ -81,6 +81,7 @@ export const testimonials = pgTable("testimonials", {
   createdAt: bigint("created_at", { mode: "number" }).notNull(),
   name: text("name").notNull().default(""),
   address: text("address").notNull().default(""),
+  rating: integer("rating").notNull().default(5), // 1-5 stars
   content: text("content").notNull(),
   status: text("status").notNull().default("pending"), // "pending" | "approved"
 });

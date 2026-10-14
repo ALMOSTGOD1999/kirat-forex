@@ -7,6 +7,7 @@ export type Testimonial = {
   createdAt: number;
   name: string;
   address: string;
+  rating: number;
   content: string;
   status: TestimonialStatus;
 };
@@ -27,6 +28,7 @@ const createTestimonialServer = createServerFn({ method: "POST" })
       createdAt: number;
       name: string;
       address: string;
+      rating: number;
       content: string;
     }) => input,
   )
@@ -46,6 +48,7 @@ const createTestimonialServer = createServerFn({ method: "POST" })
       createdAt: data.createdAt,
       name: data.name.trim().slice(0, 60),
       address: data.address.trim().slice(0, 120),
+      rating: Math.min(5, Math.max(1, Math.round(data.rating) || 5)),
       content,
       status: "pending",
     });
@@ -67,6 +70,7 @@ const loadApprovedTestimonialsServer = createServerFn({ method: "GET" }).handler
     createdAt: r.createdAt,
     name: r.name,
     address: r.address,
+    rating: r.rating,
     content: r.content,
   }));
 });
@@ -83,6 +87,7 @@ const loadAllTestimonialsServer = createServerFn({ method: "GET" }).handler(asyn
     createdAt: r.createdAt,
     name: r.name,
     address: r.address,
+    rating: r.rating,
     content: r.content,
     status: r.status as TestimonialStatus,
   }));
@@ -115,13 +120,21 @@ export async function createTestimonial(input: {
   createdAt: number;
   name: string;
   address: string;
+  rating: number;
   content: string;
 }): Promise<void> {
   await createTestimonialServer({ data: input });
 }
 
 export async function loadApprovedTestimonials(): Promise<
-  { id: string; createdAt: number; name: string; address: string; content: string }[]
+  {
+    id: string;
+    createdAt: number;
+    name: string;
+    address: string;
+    rating: number;
+    content: string;
+  }[]
 > {
   return await loadApprovedTestimonialsServer();
 }

@@ -206,6 +206,12 @@ function TestimonialsPanel() {
                 </div>
                 <p className="font-semibold text-navy">
                   {t.name || "Anonymous"}
+                  <span
+                    className="ml-2 text-xs font-normal text-gold"
+                    aria-label={`${t.rating} out of 5 stars`}
+                  >
+                    ★ {t.rating}/5
+                  </span>
                   {t.address && (
                     <span className="ml-2 text-xs font-normal text-muted-foreground">
                       {t.address}

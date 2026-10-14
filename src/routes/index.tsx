@@ -390,10 +390,18 @@ function StatItem({
 
 function TestimonialsSection() {
   const [visitorTestimonials, setVisitorTestimonials] = useState<
-    { id: string; createdAt: number; name: string; address: string; content: string }[]
+    {
+      id: string;
+      createdAt: number;
+      name: string;
+      address: string;
+      rating: number;
+      content: string;
+    }[]
   >([]);
   const [authorName, setAuthorName] = useState("");
   const [authorAddress, setAuthorAddress] = useState("");
+  const [authorRating, setAuthorRating] = useState(5);
   const [draft, setDraft] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -418,6 +426,7 @@ function TestimonialsSection() {
       toast.error("Please enter your address (3-120 characters)");
       return;
     }
+    const rating = Math.min(5, Math.max(1, Math.round(authorRating) || 5));
     if (content.length < MIN_TESTIMONIAL_LENGTH) {
       toast.error("Please write at least a couple of lines about your experience");
       return;
@@ -433,10 +442,12 @@ function TestimonialsSection() {
         createdAt: Date.now(),
         name,
         address,
+        rating,
         content,
       });
       setAuthorName("");
       setAuthorAddress("");
+      setAuthorRating(5);
       setDraft("");
       toast.success("Thank you! Your testimonial will appear on the site after review.");
     } catch {
@@ -480,6 +491,11 @@ function TestimonialsSection() {
               className="surface-card hover-lift relative p-6"
             >
               <Quote className="absolute right-5 top-5 h-8 w-8 text-primary/10" />
+              <div className="mt-4 flex gap-1 text-gold">
+                {Array.from({ length: Math.min(5, Math.max(1, t.rating || 5)) }).map((_, k) => (
+                  <Star key={k} className="h-4 w-4 fill-current" />
+                ))}
+              </div>
               <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t.content}</p>
               <p className="mt-5 text-sm font-bold text-navy">{t.name}</p>
               {t.address && <p className="text-xs text-muted-foreground">{t.address}</p>}
@@ -533,6 +549,32 @@ function TestimonialsSection() {
               autoComplete="street-address"
               className="mb-4 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring/40"
             />
+            <span className="mb-2 block text-xs font-semibold text-muted-foreground">
+              Your rating
+            </span>
+            <div
+              className="mb-4 flex items-center gap-1"
+              role="radiogroup"
+              aria-label="Your rating"
+            >
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  role="radio"
+                  aria-checked={authorRating === n}
+                  aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                  onClick={() => setAuthorRating(n)}
+                  className="rounded p-1 transition-transform hover:scale-110"
+                >
+                  <Star
+                    className={`h-6 w-6 ${
+                      n <= authorRating ? "fill-current text-gold" : "text-border"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
             <label
               htmlFor="visitor-testimonial"
               className="mb-2 block text-xs font-semibold text-muted-foreground"
