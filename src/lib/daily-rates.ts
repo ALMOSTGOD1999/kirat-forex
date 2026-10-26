@@ -61,34 +61,46 @@ export const loadDailyRates = createServerFn({ method: "GET" }).handler(async ()
   });
 });
 
-/** Save rates for today (upsert per currency). */
+/** Save rates for today (upsert per currency), stamping the exact save time. */
 export const saveDailyRates = createServerFn({ method: "POST" })
   .validator((rates: DailyRate[]) => rates)
   .handler(async ({ data }) => {
     const { db } = await import("@/db");
     const date = today();
+    const savedAt = new Date();
 
     for (const r of data) {
       const id = `${r.code}-${date}`;
       await db
         .insert(dailyRates)
-        .values({ id, code: r.code, date, buy: r.buy, sell: r.sell })
+        .values({ id, code: r.code, date, buy: r.buy, sell: r.sell, updatedAt: savedAt })
         .onConflictDoUpdate({
           target: dailyRates.id,
-          set: { buy: r.buy, sell: r.sell },
+          set: { buy: r.buy, sell: r.sell, updatedAt: savedAt },
         });
     }
   });
 
-/** Get the last updated date (latest saved rate date or static fallback). */
+/** Get the last updated stamp (date + IST time of the latest save; date-only for rows saved before timestamps existed). */
 export const getLastUpdated = createServerFn({ method: "GET" }).handler(async () => {
   const { db } = await import("@/db");
   const rows = await db
-    .select({ date: dailyRates.date })
+    .select({ date: dailyRates.date, updatedAt: dailyRates.updatedAt })
     .from(dailyRates)
     .orderBy(desc(dailyRates.date))
     .limit(1);
 
-  const latest = rows[0]?.date;
-  return latest ?? RATE_UPDATED;
+  const latest = rows[0];
+  if (!latest) return RATE_UPDATED;
+  if (!latest.updatedAt) return latest.date;
+
+  const d = new Date(latest.updatedAt);
+  const istDate = d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }); // YYYY-MM-DD
+  const istTime = d.toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  return `${istDate} ${istTime}`;
 });

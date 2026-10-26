@@ -1,4 +1,4 @@
-import { pgTable, text, integer, bigint, real } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, bigint, real, timestamp } from "drizzle-orm/pg-core";
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 export const users = pgTable("users", {
@@ -64,6 +64,7 @@ export const dailyRates = pgTable("daily_rates", {
   date: text("date").notNull(), // "2026-09-07"
   buy: real("buy").notNull(),
   sell: real("sell").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }), // when admin saved these rates
 });
 
 // ─── Custom Currencies (admin-added) ────────────────────────────────────────

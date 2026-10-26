@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import bcryptjs from "bcryptjs";
 
 export type Role = "admin" | "user";
 
@@ -82,22 +83,17 @@ const signInServer = createServerFn({ method: "POST" })
     const { db } = await import("@/db");
     const { users, sessions } = await import("@/db/schema");
     const { eq } = await import("drizzle-orm");
-    const { compare } = await import("bcryptjs");
 
     const clean = data.email.trim().toLowerCase();
 
-    const rows = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, clean))
-      .limit(1);
+    const rows = await db.select().from(users).where(eq(users.email, clean)).limit(1);
 
     if (rows.length === 0) {
       throw new Error("Invalid email or password.");
     }
 
     const found = rows[0]!;
-    const valid = await compare(data.password, found.passwordHash);
+    const valid = await bcryptjs.compare(data.password, found.passwordHash);
     if (!valid) {
       throw new Error("Invalid email or password.");
     }
@@ -122,7 +118,6 @@ const signUpServer = createServerFn({ method: "POST" })
     const { db } = await import("@/db");
     const { users, sessions } = await import("@/db/schema");
     const { eq } = await import("drizzle-orm");
-    const { hash } = await import("bcryptjs");
 
     const clean = data.email.trim().toLowerCase();
 
@@ -137,7 +132,7 @@ const signUpServer = createServerFn({ method: "POST" })
     }
 
     const id = `U${Date.now().toString(36).toUpperCase()}`;
-    const passwordHash = await hash(data.password, 10);
+    const passwordHash = await bcryptjs.hash(data.password, 10);
 
     await db.insert(users).values({
       id,
