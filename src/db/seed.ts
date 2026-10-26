@@ -79,17 +79,17 @@ async function main() {
   `;
   console.log("✓ custom_currencies table ensured");
 
-  // ── Seed today's rates from forex-data defaults ──────────────────────────────
+  // ── Seed today's rates from forex-data defaults (never overwrites admin edits)
   const date = today();
   for (const c of CURRENCIES) {
     const id = `${c.code}-${date}`;
     await sql`
       INSERT INTO daily_rates (id, code, date, buy, sell)
       VALUES (${id}, ${c.code}, ${date}, ${c.buy}, ${c.sell})
-      ON CONFLICT (id) DO UPDATE SET buy = ${c.buy}, sell = ${c.sell}
+      ON CONFLICT (id) DO NOTHING
     `;
   }
-  console.log(`✓ Today's rates seeded (${date})`);
+  console.log(`✓ Today's rates seeded if absent (${date})`);
 
   console.log("\nDone!");
 }

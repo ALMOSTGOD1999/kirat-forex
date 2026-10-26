@@ -2,7 +2,7 @@
  * Daily rates — server functions for admin to set currency rates.
  */
 import { createServerFn } from "@tanstack/react-start";
-import { eq } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 import { dailyRates, customCurrencies, hiddenCurrencies } from "@/db/schema";
 import { CURRENCIES, RATE_UPDATED } from "@/lib/forex-data";
 
@@ -17,12 +17,20 @@ export type DailyRate = {
   sell: number;
 };
 
-/** Load today's rates from the database (including custom currencies, excluding removed ones). Falls back to static CURRENCIES if none set. */
+/** Load the latest saved rates (per currency, any date) including custom currencies, excluding removed ones. Falls back to static CURRENCIES if none set. Rates stay until the admin changes them again. */
 export const loadDailyRates = createServerFn({ method: "GET" }).handler(async () => {
   const { db } = await import("@/db");
-  const date = today();
   const [rows, customRows, hiddenRows] = await Promise.all([
-    db.select().from(dailyRates).where(eq(dailyRates.date, date)),
+    // Latest saved rate per currency — not date-scoped, so admin edits persist
+    // across days until the next change.
+    db
+      .selectDistinctOn([dailyRates.code], {
+        code: dailyRates.code,
+        buy: dailyRates.buy,
+        sell: dailyRates.sell,
+      })
+      .from(dailyRates)
+      .orderBy(dailyRates.code, desc(dailyRates.date)),
     db.select().from(customCurrencies),
     db.select().from(hiddenCurrencies),
   ]);
@@ -41,11 +49,7 @@ export const loadDailyRates = createServerFn({ method: "GET" }).handler(async ()
   // Drop currencies the admin removed from the site
   const visible = staticRates.filter((c) => !hidden.has(c.code));
 
-  if (rows.length === 0) {
-    return visible;
-  }
-
-  // Merge DB rates with the full list
+  // Merge DB rates with the full list (codes never saved keep static defaults)
   const map = new Map(rows.map((r) => [r.code, { buy: r.buy, sell: r.sell }]));
   return visible.map((c) => {
     const dbRate = map.get(c.code);
@@ -76,20 +80,15 @@ export const saveDailyRates = createServerFn({ method: "POST" })
     }
   });
 
-/** Get the last updated timestamp (today's date or static fallback). */
+/** Get the last updated date (latest saved rate date or static fallback). */
 export const getLastUpdated = createServerFn({ method: "GET" }).handler(async () => {
   const { db } = await import("@/db");
-  const date = today();
   const rows = await db
-    .select()
+    .select({ date: dailyRates.date })
     .from(dailyRates)
-    .where(eq(dailyRates.date, date))
+    .orderBy(desc(dailyRates.date))
     .limit(1);
 
-  if (rows.length === 0) return RATE_UPDATED;
-
-  // Format today's date nicely
-  const d = new Date();
-  const time = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  return `${date} ${time}`;
+  const latest = rows[0]?.date;
+  return latest ?? RATE_UPDATED;
 });
